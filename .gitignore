@@ -1,0 +1,10 @@
+# Ignorer tout par défaut
+*
+
+# Autoriser l'exploration des dossiers
+!**/
+
+# Autoriser uniquement ces fichiers spécifiques
+!.gitignore
+!main.py
+!importers/dvf.py
