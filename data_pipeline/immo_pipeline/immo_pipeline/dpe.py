@@ -73,10 +73,24 @@ def raw_dpe(context: dagster.AssetExecutionContext) -> dagster.MaterializeResult
     page = 0
     
     while url:
-        response = requests.get(url, timeout=120)
-        response.raise_for_status()
-        data = response.json()
-        
+        MAX_RETRIES = 5
+        data = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = requests.get(url, timeout=120)
+                response.raise_for_status()
+                data = response.json()
+                break
+            except (requests.exceptions.RequestException, Exception) as e:
+                if attempt == MAX_RETRIES - 1:
+                    context.log.error(f"Echec définitif après {MAX_RETRIES} tentatives sur l'URL: {url}")
+                    raise
+                context.log.warning(f"Erreur de connexion (IncompleteRead / ChunkedEncoding). Tentative {attempt + 1}/{MAX_RETRIES} dans quelques secondes... Erreur: {str(e)}")
+                time.sleep(2 ** attempt)
+                
+        if not data:
+            break
+            
         results = data.get("results", [])
         if not results:
             break
