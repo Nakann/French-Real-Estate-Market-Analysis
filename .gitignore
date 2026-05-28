@@ -1,10 +1,47 @@
-# Ignorer tout par défaut
-*
+# ===============
+# DATA
+# ===============
+data/
+*.csv
+*.gz
 
-# Autoriser l'exploration des dossiers
-!**/
+# ===============
+# PYTHON & ENV
+# ===============
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env
 
-# Autoriser uniquement ces fichiers spécifiques
-!.gitignore
-!main.py
-!importers/dvf.py
+# ===============
+# DAGSTER
+# ===============
+# Keep dagster.yaml (instance config) but ignore runtime artifacts
+.dagster/storage/
+.dagster/schedules/
+.dagster/runs/
+.dagster/event_logs/
+.dagster/.logs_queue/
+.dagster/.nux/
+.dagster/.telemetry/
+.dagster/history/
+.dagster/logs/
+.tmp_dagster_*/
+
+# ===============
+# DBT
+# ===============
+target/
+dbt_packages/
+logs/
+
+# ===============
+# NEXT.JS & NODE
+# ===============
+node_modules/
+.next/
+out/
+build/
+.DS_Store

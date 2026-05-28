@@ -1,56 +1,76 @@
-# French Real Estate Market Analysis 🏠📊
+# French Real Estate Market Analysis (SAE 2026)
 
-Ce projet a pour objectif de construire un outil d'aide à la décision (Business Intelligence / Data Science) pour le marché immobilier français. Il permet de répondre à une question centrale : **Étant donné un prix, une localisation et des caractéristiques d'un bien, s'agit-il d'une bonne affaire ?**
+**Auteurs : Nathan AVENEL et Adrien PINEAU**
 
-Le projet est réalisé dans le cadre de la SAE 602 (BUT Science des Données - Semestre 3).
+Ce projet de Business Intelligence (BI) immobilier permet de répondre à la problématique :
+**"Étant donné un prix, une localisation et des caractéristiques, est-ce une bonne affaire immobilière ?"**
 
----
+## 🏗️ Architecture ELT
 
-## 🚀 Fonctionnalités principales
+```mermaid
+graph TD
+    subgraph sources [Sources de Données]
+        DVF(Fichiers DVF)
+        DPE(Fichiers DPE)
+        INSEE(Fichiers INSEE/FILOSOFI)
+    end
 
-* **Pipeline Ingestion & Transformation** : Extraction, nettoyage et croisement de plusieurs millions de lignes de données publiques.
-* **Analyses Spatiales Avancées** :
-  * Calcul de la distance réelle aux points d'intérêt (Gares, Écoles).
-  * Détermination de l'exposition au bruit (zones de bruit PEB des aéroports).
-  * Géocodage précis des transactions immobilières (DVF) via la Base Adresse Nationale (BAN).
-* **Évaluation Énergétique** : Analyse de l'impact des classes DPE sur la valeur foncière.
-* **Dashboard Décisionnel** : Visualisation cartographique, estimateur de prix et recherche d'opportunités d'achat.
+    subgraph pipeline [Data Pipeline Python et dbt]
+        Polars(Polars / psycopg)
+        DBT(dbt Core)
+    end
 
----
+    subgraph bdd [Base de données]
+        PG[(PostgreSQL + PostGIS)]
+        SchemaBronze[Staging / Raw]
+        SchemaGold[Marts / Clean]
+    end
 
-## 🛠️ Stack Technique
+    subgraph dash [Dashboard Next.js]
+        SC[Server Components]
+        UI[Frontend UI]
+    end
 
-* **Base de données** : PostgreSQL 16
-* **Extension spatiale** : PostGIS 3.6
-* **Traitement & Ingestion** : Python (Pandas, GeoPandas, SQLAlchemy)
-* **Visualisation** : Dashboard interactif / Cartes choroplèthes
-
----
-
-## 📂 Structure du Projet
-
-```text
-├── Consignes.md         # Consignes détaillées du projet (ignoré par Git)
-├── schema.sql           # Schéma de base de données PostgreSQL + PostGIS
-├── .gitignore           # Fichiers à exclure du dépôt Git (données volumineuses, venv, etc.)
-└── README.md            # Présentation générale du projet
+    DVF -->|Lecture ultra-rapide| Polars
+    DPE -->|Lecture ultra-rapide| Polars
+    INSEE -->|Lecture ultra-rapide| Polars
+    
+    Polars -->|Bulk COPY| SchemaBronze
+    
+    SchemaBronze -->|Transformations SQL| DBT
+    DBT -->|Vues et Agrégations| SchemaGold
+    
+    SchemaGold -->|Requêtes SQL directes| SC
+    SC -->|Données filtrées| UI
 ```
 
----
+## 🚀 Démarrage Rapide
 
-## ⚙️ Installation & Démarrage Rapide
-
-### 1. Prérequis
-1. Téléchargez et installez **PostgreSQL 16** (avec l'extension **PostGIS** via Stack Builder) ou lancez-le via Docker.
-2. Clonez le dépôt et configurez votre environnement de développement :
+1. **Lancer la base de données (PostgreSQL + PostGIS)** :
    ```bash
-   git clone https://github.com/Nakann/French-Real-Estate-Market-Analysis.git
-   cd French-Real-Estate-Market-Analysis
+   make up
    ```
 
-### 2. Initialisation de la base de données
-Connectez-vous à votre serveur PostgreSQL et exécutez le script d'initialisation du schéma :
-```bash
-psql -U postgres -d real_estate_db -f schema.sql
-```
-*(Vous pouvez également importer et exécuter [schema.sql](schema.sql) directement dans DBeaver ou pgAdmin).*
+2. **Ingestion des données brutes (Couche Bronze)** :
+   Placez vos CSV dans le dossier `data/` puis exécutez le script d'ingestion :
+   ```bash
+   make ingest
+   ```
+
+3. **Transformation des données (Couche Gold via dbt)** :
+   ```bash
+   make dbt-run
+   ```
+
+4. **Lancer le Frontend Next.js** :
+   ```bash
+   make dev-front
+   ```
+
+---
+
+## 📂 Sources de données
+
+1. **DVF (Demandes de Valeurs Foncières)** : Historique des transactions immobilières en France (static.data.gouv.fr).
+2. **DPE (Diagnostic de Performance Énergétique)** : Données énergétiques de l'ADEME (data.ademe.fr).
+3. **FILOSOFI (INSEE)** : Données socio-économiques locales (Population, Revenu médian, etc.).

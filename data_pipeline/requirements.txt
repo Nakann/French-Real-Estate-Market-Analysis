@@ -1,0 +1,8 @@
+polars
+psycopg[binary]
+dbt-postgres
+python-dotenv
+dagster
+dagster-webserver
+dagster-dbt
+requests

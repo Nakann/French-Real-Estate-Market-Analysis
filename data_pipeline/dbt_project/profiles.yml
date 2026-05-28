@@ -1,0 +1,12 @@
+dbt_project:
+  outputs:
+    dev:
+      type: postgres
+      threads: 4
+      host: localhost
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER', 'postgres') }}"
+      pass: "{{ env_var('POSTGRES_PASSWORD', 'postgrespassword') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'real_estate_db') }}"
+      schema: gold
+  target: dev

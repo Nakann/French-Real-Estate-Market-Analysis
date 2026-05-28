@@ -1,0 +1,5 @@
+telemetry:
+  enabled: false
+
+# On peut ici ajouter d'autres configurations si besoin :
+# storage, compute, etc. Par défaut, Dagster utilise SQLite dans le dossier DAGSTER_HOME.
