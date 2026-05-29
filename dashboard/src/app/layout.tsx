@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
-const outfit = Outfit({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "Explorer Immo | SAE 602",
+  title: "ImmoExplorer | SAE 602",
   description: "Explorateur interactif des données DVF et DPE - France",
 };
 
@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${outfit.variable} dark`}>
-      <body className="font-sans antialiased bg-slate-950 text-slate-50 overflow-hidden h-screen w-screen flex">
+    <html lang="fr" className={inter.variable}>
+      <body className="font-sans antialiased bg-slate-50 text-slate-800 overflow-hidden h-screen w-screen flex">
         {children}
       </body>
     </html>
