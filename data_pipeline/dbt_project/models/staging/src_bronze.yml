@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Données brutes ingérées depuis les APIs et fichiers sources via Dagster."
+    database: real_estate_db
+    schema: bronze
+    tables:
+      - name: raw_dvf
+        description: "Demandes de Valeurs Foncières (ventes immobilières)."
+      - name: raw_dpe
+        description: "Diagnostics de Performance Énergétique (DPE)."
+      - name: raw_filosofi
+        description: "Données socio-économiques FILOSOFI (Indicateurs)."
+      - name: raw_filosofi_metadata
+        description: "Données socio-économiques FILOSOFI (Métadonnées)."

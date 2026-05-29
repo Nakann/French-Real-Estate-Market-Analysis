@@ -3,11 +3,11 @@ from dagster_dbt import DbtCliResource
 from .assets import dbt_project_dbt_assets
 from .project import dbt_project_project
 from .schedules import schedules
-from . import ingestion
 from . import dvf
 from . import dpe
+from . import filosofi
 
-python_assets = load_assets_from_modules([ingestion, dvf, dpe])
+python_assets = load_assets_from_modules([dvf, dpe, filosofi])
 
 defs = Definitions(
     assets=[dbt_project_dbt_assets] + python_assets,
