@@ -51,9 +51,10 @@ interface SidebarProps {
   realEstates: any[];
   filters: { dpe: string[]; commune: string };
   onFiltersChange: (f: { dpe: string[]; commune: string }) => void;
+  onOpenEstimator: () => void;
 }
 
-export function Sidebar({ realEstates, filters, onFiltersChange }: SidebarProps) {
+export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator }: SidebarProps) {
   // ── Stats computed on visible data ───────────────────────────────────────────
   const stats = useMemo(() => {
     const filtered = realEstates.filter(r =>
@@ -247,6 +248,19 @@ export function Sidebar({ realEstates, filters, onFiltersChange }: SidebarProps)
             </section>
           </>
         )}
+      </div>
+
+      {/* ── Bouton Simulateur ── */}
+      <div className="px-4 pb-3">
+        <button
+          onClick={onOpenEstimator}
+          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-sm font-semibold shadow-md transition-all"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          Simulateur de prix
+        </button>
       </div>
 
       {/* ── Footer ── */}
