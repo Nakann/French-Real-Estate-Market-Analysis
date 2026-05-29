@@ -26,6 +26,20 @@ interface RealEstate {
   polygon_geojson: string | null;
 }
 
+interface CommuneGeoJSON {
+  type: "FeatureCollection";
+  features: {
+    type: "Feature";
+    geometry: any;
+    properties: {
+      code_commune: string;
+      nom_commune: string;
+      prix_m2_median: number;
+      nb_mutations: number;
+    };
+  }[];
+}
+
 interface MapFilters {
   dpe: string[];
   commune: string;
@@ -149,11 +163,15 @@ function PropertyPopup({ re }: { re: RealEstate }) {
 // ── MapInteractions : handles bounds + fetch ───────────────────────────────────
 function MapInteractions({
   setRealEstates,
+  setCommunes,
   setLoading,
+  setZoom,
   filters,
 }: {
   setRealEstates: (d: RealEstate[]) => void;
+  setCommunes: (d: CommuneGeoJSON | null) => void;
   setLoading: (b: boolean) => void;
+  setZoom: (z: number) => void;
   filters: MapFilters;
 }) {
   const abortRef = useRef<AbortController | null>(null);
@@ -164,22 +182,37 @@ function MapInteractions({
     abortRef.current = new AbortController();
 
     setLoading(true);
-    const url = `/api/immobilier?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}&limit=500`;
+    const zoomLevel = mapInstance.getZoom();
+    setZoom(zoomLevel);
+
+    let url = "";
+    if (zoomLevel < 12) {
+      url = `/api/communes?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}`;
+    } else {
+      url = `/api/immobilier?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}&limit=500`;
+    }
 
     fetch(url, { signal: abortRef.current.signal })
       .then(res => {
         if (!res.ok) throw new Error(`API ${res.status}`);
         return res.json();
       })
-      .then((data: RealEstate[]) => {
-        if (Array.isArray(data)) setRealEstates(data);
+      .then((data) => {
+        if (zoomLevel < 12) {
+          setCommunes(data as CommuneGeoJSON);
+          setRealEstates([]);
+        } else {
+          if (Array.isArray(data)) setRealEstates(data as RealEstate[]);
+          setCommunes(null);
+        }
       })
       .catch(err => { if (err.name !== "AbortError") console.error("Fetch error:", err); })
       .finally(() => setLoading(false));
-  }, [setRealEstates, setLoading]);
+  }, [setRealEstates, setCommunes, setLoading, setZoom]);
 
   const map = useMapEvents({
     moveend() { fetchData(map); },
+    zoomend() { fetchData(map); },
   });
 
   useEffect(() => {
@@ -201,7 +234,9 @@ export default function Map({
 }) {
   const [mounted, setMounted] = useState(false);
   const [allData, setAllData] = useState<RealEstate[]>([]);
+  const [communesData, setCommunesData] = useState<CommuneGeoJSON | null>(null);
   const [loading, setLoading] = useState(false);
+  const [zoom, setZoom] = useState(14);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -209,6 +244,15 @@ export default function Map({
     setAllData(data);
     onDataLoaded?.(data);
   }, [onDataLoaded]);
+
+  const getCommuneColor = (prix: number) => {
+    if (!prix) return "#e2e8f0"; // slate-200
+    if (prix > 5000) return "#9f1239"; // rose-900
+    if (prix > 4000) return "#be123c"; // rose-700
+    if (prix > 3000) return "#fb7185"; // rose-400
+    if (prix > 2000) return "#fcd34d"; // amber-300
+    return "#86efac"; // green-300
+  };
 
   // Client-side filtering
   const visibleData = allData.filter(re => {
@@ -267,12 +311,40 @@ export default function Map({
 
         <MapInteractions
           setRealEstates={handleDataLoaded}
+          setCommunes={setCommunesData}
           setLoading={setLoading}
+          setZoom={setZoom}
           filters={filters}
         />
 
-        {/* ── Render polygons or circle markers ── */}
-        {visibleData.map((re, index) => {
+        {/* ── Render Communes if zoom < 12 ── */}
+        {zoom < 12 && communesData && (
+          <GeoJSON
+            key={"communes-" + Date.now()}
+            data={communesData as any}
+            style={(feature) => ({
+              fillColor: getCommuneColor(feature?.properties?.prix_m2_median),
+              weight: 1,
+              opacity: 1,
+              color: 'white',
+              fillOpacity: 0.7
+            })}
+            onEachFeature={(feature, layer) => {
+              const props = feature.properties;
+              layer.bindTooltip(
+                `<div class="text-sm font-sans">
+                  <strong>${props.nom_commune}</strong><br/>
+                  Prix médian: ${props.prix_m2_median ? Math.round(props.prix_m2_median) + ' €/m²' : 'N/A'}<br/>
+                  Ventes: ${props.nb_mutations || 0}
+                </div>`,
+                { sticky: true }
+              );
+            }}
+          />
+        )}
+
+        {/* ── Render polygons or circle markers if zoom >= 12 ── */}
+        {zoom >= 12 && visibleData.map((re, index) => {
           if (!re.latitude || !re.longitude) return null;
           const color = getDpeColor(re.etiquette_dpe);
           const popup = <Popup><PropertyPopup re={re} /></Popup>;

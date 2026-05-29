@@ -122,4 +122,4 @@ make dev-front
 1. **DVF (Demandes de Valeurs Foncières)** : Historique des transactions immobilières en France (static.data.gouv.fr).
 2. **DPE (Diagnostic de Performance Énergétique)** : Données énergétiques de l'ADEME (data.ademe.fr).
 3. **FILOSOFI (INSEE)** : Données socio-économiques locales (Population, Revenu médian, etc.).
-4. **API Cadastre (IGN)** : Interrogation dynamique côté frontend pour récupérer les emprises au sol (polygones) des bâtiments.
+4. **Communes de France (Etalab/IGN)** : Géométries simplifiées des communes pour l'affichage cartographique (Admin Express).

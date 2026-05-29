@@ -14,3 +14,5 @@ sources:
         description: "Données socio-économiques FILOSOFI (Indicateurs)."
       - name: raw_filosofi_metadata
         description: "Données socio-économiques FILOSOFI (Métadonnées)."
+      - name: raw_communes
+        description: "Géométries simplifiées des communes (GeoJSON)."
