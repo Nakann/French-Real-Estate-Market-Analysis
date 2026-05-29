@@ -6,8 +6,9 @@ from .schedules import schedules
 from . import dvf
 from . import dpe
 from . import filosofi
+from . import communes
 
-python_assets = load_assets_from_modules([dvf, dpe, filosofi])
+python_assets = load_assets_from_modules([dvf, dpe, filosofi, communes])
 
 defs = Definitions(
     assets=[dbt_project_dbt_assets] + python_assets,
