@@ -76,6 +76,20 @@ dpe_par_ban AS (
 -- ─── Filosofi : déjà pivoté ───────────────────────────────────────────────────
 socio AS (
     SELECT * FROM {{ ref('stg_filosofi') }}
+),
+
+-- ─── Zones Inondables ────────────────────────────────────────────────────────
+ventes_inondables AS (
+    SELECT
+        v.id_mutation,
+        BOOL_OR(ST_Intersects(
+            ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326),
+            zi.geom
+        )) AS in_zone_inondable
+    FROM ventes v
+    INNER JOIN {{ ref('stg_zones_inondables') }} zi 
+      ON ST_Intersects(ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326), zi.geom)
+    GROUP BY v.id_mutation
 )
 
 -- ─── Jointure finale ──────────────────────────────────────────────────────────
@@ -103,9 +117,13 @@ SELECT
     s.taux_pauvrete,
     s.indice_gini,
     -- Fiabilité Localisation
-    verif.distance_meters AS distance_ban
+    verif.distance_meters AS distance_ban,
+    -- Risques naturels
+    COALESCE(zi.in_zone_inondable, FALSE) AS in_zone_inondable
 
 FROM ventes v
 LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation
 LEFT JOIN dpe_par_ban    d ON d.identifiant_ban = verif.id_ban
 LEFT JOIN socio          s ON s.code_commune = v.code_commune
+LEFT JOIN ventes_inondables zi ON zi.id_mutation = v.id_mutation
+

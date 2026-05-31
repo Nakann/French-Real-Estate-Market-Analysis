@@ -3,16 +3,16 @@ from dagster_dbt import DbtCliResource
 from .assets import dbt_project_dbt_assets
 from .project import dbt_project_project
 from .schedules import schedules
-from . import dvf
-from . import dpe
-from . import filosofi
-from . import communes
-from . import ban
+from . import dvf, dpe, filosofi, communes, ban, inondations
+import warnings
 
-python_assets = load_assets_from_modules([dvf, dpe, filosofi, communes, ban])
+# Ignore SQLAlchemy warnings from GeoPandas
+warnings.filterwarnings("ignore", category=UserWarning, module="pandas.io.sql")
+
+all_assets = load_assets_from_modules([dvf, dpe, filosofi, communes, ban, inondations])
 
 defs = Definitions(
-    assets=[dbt_project_dbt_assets] + python_assets,
+    assets=[dbt_project_dbt_assets] + all_assets,
     schedules=schedules,
     resources={
         "dbt": DbtCliResource(project_dir=dbt_project_project),

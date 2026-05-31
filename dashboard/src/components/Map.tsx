@@ -45,6 +45,7 @@ interface RealEstate {
   indice_gini: number | null;
   polygon_geojson: string | null;
   distance_ban: number | null;
+  in_zone_inondable: boolean;
 }
 
 interface CommuneGeoJSON {
@@ -64,6 +65,7 @@ interface CommuneGeoJSON {
 interface MapFilters {
   dpe: string[];
   commune: string;
+  showFloodZones: boolean;
 }
 
 // ── DPE helper ─────────────────────────────────────────────────────────────────
@@ -105,7 +107,6 @@ function PropertyPopup({ re }: { re: RealEstate }) {
         <div className="flex items-center justify-between mt-1">
           {date && <p className="text-[10px] text-slate-400">{date}</p>}
           
-          {/* Badge de Fiabilité de la localisation */}
           {re.distance_ban !== null ? (
             re.distance_ban <= 50 ? (
               <span className="flex items-center gap-1 text-[9px] uppercase font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
@@ -122,6 +123,13 @@ function PropertyPopup({ re }: { re: RealEstate }) {
              <span className="text-[9px] uppercase font-bold text-slate-400 px-1.5 py-0.5 rounded border border-slate-200" title="Adresse introuvable dans la BAN">
                Non vérifié
              </span>
+          )}
+
+          {re.in_zone_inondable && (
+            <span className="flex items-center gap-1 text-[9px] uppercase font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 ml-2" title="Ce bien est situé dans une zone inondable (PPRI)">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+              Zone inondable
+            </span>
           )}
         </div>
       </div>
@@ -206,12 +214,14 @@ function PropertyPopup({ re }: { re: RealEstate }) {
 function MapInteractions({
   setRealEstates,
   setCommunes,
+  setFloodZones,
   setLoading,
   setZoom,
   filters,
 }: {
   setRealEstates: (d: RealEstate[]) => void;
   setCommunes: (d: CommuneGeoJSON | null) => void;
+  setFloodZones: (d: any | null) => void;
   setLoading: (b: boolean) => void;
   setZoom: (z: number) => void;
   filters: MapFilters;
@@ -228,29 +238,48 @@ function MapInteractions({
     setZoom(zoomLevel);
 
     let url = "";
+    let floodUrl = "";
+
     if (zoomLevel < 12) {
       url = `/api/communes?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}`;
     } else {
       url = `/api/immobilier?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}&limit=500`;
+      if (filters.showFloodZones) {
+        floodUrl = `/api/zones-inondables?min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lon=${bounds.getWest()}&max_lon=${bounds.getEast()}`;
+      }
     }
 
-    fetch(url, { signal: abortRef.current.signal })
-      .then(res => {
-        if (!res.ok) throw new Error(`API ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+    const fetches = [fetch(url, { signal: abortRef.current.signal }).then(r => {
+      if (!r.ok) throw new Error(`API ${r.status}`);
+      return r.json();
+    })];
+
+    if (floodUrl) {
+      fetches.push(fetch(floodUrl, { signal: abortRef.current.signal }).then(r => {
+        if (!r.ok) throw new Error(`API ${r.status}`);
+        return r.json();
+      }));
+    }
+
+    Promise.all(fetches)
+      .then(([data, floodData]) => {
         if (zoomLevel < 12) {
           setCommunes(data as CommuneGeoJSON);
           setRealEstates([]);
+          setFloodZones(null);
         } else {
           if (Array.isArray(data)) setRealEstates(data as RealEstate[]);
           setCommunes(null);
+          if (floodData) {
+            setFloodZones(floodData);
+          } else {
+            setFloodZones(null);
+          }
         }
       })
       .catch(err => { if (err.name !== "AbortError") console.error("Fetch error:", err); })
       .finally(() => setLoading(false));
-  }, [setRealEstates, setCommunes, setLoading, setZoom]);
+  }, [setRealEstates, setCommunes, setFloodZones, setLoading, setZoom, filters.showFloodZones]);
 
   const map = useMapEvents({
     moveend() { fetchData(map); },
@@ -261,7 +290,7 @@ function MapInteractions({
     const timeout = setTimeout(() => fetchData(map), 150);
     return () => clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters.showFloodZones]);
 
   return null;
 }
@@ -277,6 +306,7 @@ export default function Map({
   const [mounted, setMounted] = useState(false);
   const [allData, setAllData] = useState<RealEstate[]>([]);
   const [communesData, setCommunesData] = useState<CommuneGeoJSON | null>(null);
+  const [floodZones, setFloodZones] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [zoom, setZoom] = useState(14);
 
@@ -395,6 +425,7 @@ export default function Map({
         <MapInteractions
           setRealEstates={handleDataLoaded}
           setCommunes={setCommunesData}
+          setFloodZones={setFloodZones}
           setLoading={setLoading}
           setZoom={setZoom}
           filters={filters}
@@ -426,6 +457,33 @@ export default function Map({
                  const map = e.target._map;
                  map.flyToBounds(e.target.getBounds(), { duration: 0.8 });
               });
+            }}
+          />
+        )}
+
+        {/* ── Render Flood Zones if enabled ── */}
+        {filters.showFloodZones && floodZones && (
+          <GeoJSON
+            key={"floodzones-" + Date.now()}
+            data={floodZones}
+            style={() => ({
+              fillColor: '#3b82f6', // blue-500
+              weight: 1.5,
+              opacity: 0.8,
+              color: '#1d4ed8', // blue-700
+              fillOpacity: 0.3,
+              dashArray: '3'
+            })}
+            onEachFeature={(feature, layer) => {
+              const props = feature.properties;
+              layer.bindTooltip(
+                `<div class="text-sm font-sans text-blue-900">
+                  <strong>Zone Inondable</strong><br/>
+                  Zone: ${props.nom_zone || 'Inconnue'}<br/>
+                  Risque: <span class="uppercase font-bold">${props.niveau_risque || 'N/A'}</span>
+                </div>`,
+                { sticky: true }
+              );
             }}
           />
         )}

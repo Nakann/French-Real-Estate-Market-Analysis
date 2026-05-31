@@ -49,8 +49,8 @@ const DPE_CONFIG: Record<string, { color: string; bg: string; border: string }> 
 // ── Props ───────────────────────────────────────────────────────────────────────
 interface SidebarProps {
   realEstates: any[];
-  filters: { dpe: string[]; commune: string };
-  onFiltersChange: (f: { dpe: string[]; commune: string }) => void;
+  filters: { dpe: string[]; commune: string; showFloodZones: boolean };
+  onFiltersChange: (f: { dpe: string[]; commune: string; showFloodZones: boolean }) => void;
   onOpenEstimator: () => void;
   onOpenComparator: () => void;
 }
@@ -168,6 +168,20 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
                 Effacer la sélection
               </button>
             )}
+          </div>
+
+          {/* Zones inondables toggle */}
+          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <label className="block text-xs font-bold text-slate-700">Zones inondables</label>
+              <p className="text-[10px] text-slate-400">Afficher les PPRI sur la carte</p>
+            </div>
+            <button
+              onClick={() => onFiltersChange({ ...filters, showFloodZones: !filters.showFloodZones })}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${filters.showFloodZones ? 'bg-indigo-600' : 'bg-slate-200'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${filters.showFloodZones ? 'translate-x-4.5' : 'translate-x-1'}`} style={{ transform: filters.showFloodZones ? 'translateX(18px)' : 'translateX(4px)' }} />
+            </button>
           </div>
         </section>
 

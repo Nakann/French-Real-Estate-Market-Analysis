@@ -10,9 +10,10 @@ const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 export default function Dashboard() {
   const [realEstates, setRealEstates] = useState<any[]>([]);
-  const [filters, setFilters] = useState<{ dpe: string[]; commune: string }>({
+  const [filters, setFilters] = useState<{ dpe: string[]; commune: string; showFloodZones: boolean }>({
     dpe: [],
     commune: "",
+    showFloodZones: false
   });
   const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
