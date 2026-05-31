@@ -11,36 +11,66 @@
 
 -- ─── DVF pré-agrégé ───────────────────────────────────────────────────────────
 -- On sélectionne uniquement les ventes avec coordonnées GPS valides
-WITH ventes AS (
+WITH raw_ventes AS (
     SELECT
         id_mutation,
-        CAST(NULLIF(date_mutation, '') AS DATE)                              AS date_mutation,
-        CAST(REPLACE(NULLIF(valeur_fonciere, ''), ',', '.') AS NUMERIC)     AS valeur_fonciere,
-        CAST(NULLIF(surface_reelle_bati, '') AS NUMERIC)                    AS surface_reelle_bati,
+        date_mutation,
+        valeur_fonciere,
+        surface_reelle_bati,
         type_local,
-        TRIM(COALESCE(adresse_numero,'') || ' ' || COALESCE(adresse_nom_voie,'')) AS adresse_complete,
+        adresse_complete,
         code_commune,
         code_departement,
-        CAST(REPLACE(NULLIF(longitude,''),',','.') AS NUMERIC)              AS longitude,
-        CAST(REPLACE(NULLIF(latitude, ''),',','.') AS NUMERIC)             AS latitude
-    FROM {{ source('bronze', 'raw_dvf') }}
-    WHERE type_local IN ('Appartement', 'Maison')
-      AND NULLIF(valeur_fonciere, '') IS NOT NULL
-      AND NULLIF(longitude, '') IS NOT NULL
-      AND NULLIF(latitude,  '') IS NOT NULL
+        longitude,
+        latitude
+    FROM {{ ref('stg_dvf') }}
 ),
 
--- ─── DPE : un enregistrement par commune ─────────────────────────────────────
-dpe_par_commune AS (
-    SELECT DISTINCT ON (code_insee_ban)
-        code_insee_ban                                                       AS code_commune,
+ventes_count AS (
+    -- On compte combien de locaux principaux (Maison/Appartement) figurent dans chaque transaction
+    -- Les dépendances, caves, parkings sont ignorés de ce comptage
+    SELECT id_mutation
+    FROM raw_ventes
+    WHERE type_local IN ('Appartement', 'Maison')
+    GROUP BY id_mutation
+    HAVING COUNT(*) = 1
+),
+
+ventes AS (
+    SELECT r.*
+    FROM raw_ventes r
+    INNER JOIN ventes_count vc ON r.id_mutation = vc.id_mutation
+    WHERE r.type_local IN ('Appartement', 'Maison')
+      AND r.valeur_fonciere IS NOT NULL
+      AND r.surface_reelle_bati > 0
+      AND r.longitude IS NOT NULL
+      AND r.latitude IS NOT NULL
+      -- Filtre anti-aberrations sur le prix au m²
+      AND (r.valeur_fonciere / r.surface_reelle_bati) BETWEEN 500 AND 30000
+),
+
+-- ─── Vérification spatiale ───────────────────────────────────────────────────
+verif AS (
+    SELECT 
+        id_mutation, 
+        MAX(id_ban) AS id_ban,
+        MIN(distance_meters) AS distance_meters
+    FROM {{ ref('fact_verification_spatiale') }}
+    GROUP BY id_mutation
+),
+
+-- ─── DPE : un enregistrement par adresse BAN ─────────────────────────────────────
+dpe_par_ban AS (
+    SELECT DISTINCT ON (identifiant_ban)
+        identifiant_ban,
         etiquette_dpe,
         etiquette_ges,
         conso_5_usages_par_m2_ep                                            AS consommation_energie
     FROM {{ source('bronze', 'raw_dpe') }}
-    WHERE code_insee_ban IS NOT NULL
-      AND code_insee_ban != ''
-    ORDER BY code_insee_ban, date_etablissement_dpe DESC
+    WHERE identifiant_ban IS NOT NULL
+      AND identifiant_ban != ''
+      AND identifiant_ban IN (SELECT id_ban FROM verif)
+    ORDER BY identifiant_ban, date_etablissement_dpe DESC
 ),
 
 -- ─── Filosofi : déjà pivoté ───────────────────────────────────────────────────
@@ -71,8 +101,11 @@ SELECT
     -- Socio-éco
     s.niveau_vie_median,
     s.taux_pauvrete,
-    s.indice_gini
+    s.indice_gini,
+    -- Fiabilité Localisation
+    verif.distance_meters AS distance_ban
 
 FROM ventes v
-LEFT JOIN dpe_par_commune d ON d.code_commune = v.code_commune
+LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation
+LEFT JOIN dpe_par_ban    d ON d.identifiant_ban = verif.id_ban
 LEFT JOIN socio          s ON s.code_commune = v.code_commune

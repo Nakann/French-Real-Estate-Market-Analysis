@@ -7,8 +7,9 @@ from . import dvf
 from . import dpe
 from . import filosofi
 from . import communes
+from . import ban
 
-python_assets = load_assets_from_modules([dvf, dpe, filosofi, communes])
+python_assets = load_assets_from_modules([dvf, dpe, filosofi, communes, ban])
 
 defs = Definitions(
     assets=[dbt_project_dbt_assets] + python_assets,

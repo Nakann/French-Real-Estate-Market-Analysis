@@ -60,9 +60,39 @@
 .leaflet-popup-tip-container { display: none; }
 
 /* ─── GeoJSON polygon hover ─── */
+.leaflet-interactive {
+  outline: none !important;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.leaflet-interactive:focus {
+  outline: none !important;
+}
 .leaflet-interactive:hover {
   filter: brightness(1.08);
   cursor: pointer;
+}
+
+/* ─── Marker Cluster Custom Styling ─── */
+.marker-cluster-custom {
+  background-clip: padding-box;
+  border-radius: 20px;
+  background-color: rgba(79, 70, 229, 0.6); /* primary-600 avec opacité */
+}
+.marker-cluster-custom div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  background-color: rgba(79, 70, 229, 0.9);
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
 }
 
 /* ─── Sidebar Scrollbar ─── */

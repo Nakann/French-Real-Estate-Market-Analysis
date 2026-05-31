@@ -45,6 +45,15 @@ graph TD
     SC -->|Données enrichies (Polygones IGN)| UI
 ```
 
+## 🛠️ Technologies Utilisées
+
+- **Base de données** : **PostgreSQL** avec l'extension **PostGIS** pour gérer les requêtes et les jointures spatiales ultra-performantes.
+- **Orchestration** : **Dagster** pour coordonner les téléchargements de données brutes et automatiser le pipeline.
+- **Traitement de données (Ingestion)** : **Polars** couplé à `psycopg` (Bulk COPY) pour parser et insérer des millions de lignes CSV en quelques secondes de manière ultra-optimisée.
+- **Transformation (ELT)** : **dbt Core** pour modéliser, nettoyer et transformer les données brutes (couche Bronze) en tables analytiques prêtes à être requêtées (couche Gold).
+- **Frontend & Backend Web (Fullstack)** : **Next.js** (React / Node.js). Utilisé comme framework fullstack à la fois pour le rendu du dashboard interactif (Frontend) ET pour les routes API Serverless interrogeant la base de données (Backend).
+- **Cartographie** : **Mapbox GL** / **Deck.gl** (ou React Map GL) pour le rendu visuel interactif des polygones de communes et des points DVF directement dans le navigateur.
+
 ## ⚙️ Prérequis & Installation
 
 Avant de pouvoir lancer le projet, vous devez installer les dépendances et configurer votre environnement de développement.
@@ -120,6 +129,12 @@ make dev-front
 ## 📂 Sources de données
 
 1. **DVF (Demandes de Valeurs Foncières)** : Historique des transactions immobilières en France (static.data.gouv.fr).
+   🔗 [Consulter et télécharger les données (data.gouv.fr)](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/)
 2. **DPE (Diagnostic de Performance Énergétique)** : Données énergétiques de l'ADEME (data.ademe.fr).
+   🔗 [Consulter l'API et les données (data.ademe.fr)](https://data.ademe.fr/datasets/dpe-v2-logements-existants)
 3. **FILOSOFI (INSEE)** : Données socio-économiques locales (Population, Revenu médian, etc.).
+   🔗 [Consulter les données (insee.fr)](https://www.insee.fr/fr/statistiques/8287313)
 4. **Communes de France (Etalab/IGN)** : Géométries simplifiées des communes pour l'affichage cartographique (Admin Express).
+   🔗 [Dépôt GitHub France GeoJSON](https://github.com/gregoiredavid/france-geojson)
+5. **BAN (Base Adresse Nationale)** : Base officielle des adresses françaises utilisée pour la vérification de la géolocalisation.
+   🔗 [Télécharger les fichiers CSV (adresse.data.gouv.fr)](https://adresse.data.gouv.fr/donnees-nationales)

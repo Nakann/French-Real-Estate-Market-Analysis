@@ -16,3 +16,5 @@ sources:
         description: "Données socio-économiques FILOSOFI (Métadonnées)."
       - name: raw_communes
         description: "Géométries simplifiées des communes (GeoJSON)."
+      - name: raw_ban
+        description: "Base Adresse Nationale (BAN) contenant les coordonnées officielles."

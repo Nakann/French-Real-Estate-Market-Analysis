@@ -40,7 +40,8 @@ export async function GET(request: Request) {
         consommation_energie,
         niveau_vie_median,
         taux_pauvrete,
-        indice_gini
+        indice_gini,
+        distance_ban
       FROM gold.fact_immobilier
       WHERE latitude BETWEEN $1 AND $2
         AND longitude BETWEEN $3 AND $4

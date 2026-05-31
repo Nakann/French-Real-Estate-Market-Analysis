@@ -1,8 +1,28 @@
 "use client";
 
-import { MapContainer, TileLayer, ZoomControl, useMapEvents, CircleMarker, GeoJSON, Popup } from "react-leaflet";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { MapContainer, TileLayer, ZoomControl, useMapEvents, GeoJSON, Popup, Marker } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import L from "leaflet";
+
+// ── Icons ──────────────────────────────────────────────────────────────────────
+const createCustomIcon = (type: string, color: string) => {
+  const isHouse = type?.toLowerCase() === "maison";
+  // Un SVG minimal en ligne. Pour les maisons : un toit (home), pour les apparts : un building.
+  const svg = isHouse 
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>`;
+
+  return L.divIcon({
+    html: `<div style="background-color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.25); border: 2px solid ${color};">
+             <div style="width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">${svg}</div>
+           </div>`,
+    className: "",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  });
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface RealEstate {
@@ -24,6 +44,7 @@ interface RealEstate {
   taux_pauvrete: number | null;
   indice_gini: number | null;
   polygon_geojson: string | null;
+  distance_ban: number | null;
 }
 
 interface CommuneGeoJSON {
@@ -81,7 +102,28 @@ function PropertyPopup({ re }: { re: RealEstate }) {
             </span>
           )}
         </div>
-        {date && <p className="text-[10px] text-slate-400 mt-1">{date}</p>}
+        <div className="flex items-center justify-between mt-1">
+          {date && <p className="text-[10px] text-slate-400">{date}</p>}
+          
+          {/* Badge de Fiabilité de la localisation */}
+          {re.distance_ban !== null ? (
+            re.distance_ban <= 50 ? (
+              <span className="flex items-center gap-1 text-[9px] uppercase font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                Localisation sûre
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[9px] uppercase font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Imprécis (&gt;50m)
+              </span>
+            )
+          ) : (
+             <span className="text-[9px] uppercase font-bold text-slate-400 px-1.5 py-0.5 rounded border border-slate-200" title="Adresse introuvable dans la BAN">
+               Non vérifié
+             </span>
+          )}
+        </div>
       </div>
 
       {/* Price grid */}
@@ -267,6 +309,47 @@ export default function Map({
     return true;
   });
 
+  // Render markers efficiently
+  const markers = useMemo(() => {
+    return visibleData.map((re, index) => {
+      if (!re.latitude || !re.longitude) return null;
+      const color = getDpeColor(re.etiquette_dpe);
+      const popup = <Popup><PropertyPopup re={re} /></Popup>;
+
+      if (re.polygon_geojson) {
+        let geometry: any;
+        try { geometry = JSON.parse(re.polygon_geojson); } catch { geometry = null; }
+        if (geometry) {
+          return (
+            <GeoJSON
+              key={re.id_mutation + "-poly-" + index}
+              data={geometry}
+              style={{
+                fillColor: color,
+                color: "white",
+                weight: 1.5,
+                fillOpacity: 0.65,
+              }}
+            >
+              {popup}
+            </GeoJSON>
+          );
+        }
+      }
+
+      // Fallback: icône vectorielle
+      return (
+        <Marker
+          key={re.id_mutation + "-marker-" + index}
+          position={[re.latitude, re.longitude]}
+          icon={createCustomIcon(re.type_local, color)}
+        >
+          {popup}
+        </Marker>
+      );
+    });
+  }, [visibleData]);
+
   if (!mounted) {
     return (
       <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-sm">
@@ -339,54 +422,31 @@ export default function Map({
                 </div>`,
                 { sticky: true }
               );
+              layer.on('click', (e) => {
+                 const map = e.target._map;
+                 map.flyToBounds(e.target.getBounds(), { duration: 0.8 });
+              });
             }}
           />
         )}
 
-        {/* ── Render polygons or circle markers if zoom >= 12 ── */}
-        {zoom >= 12 && visibleData.map((re, index) => {
-          if (!re.latitude || !re.longitude) return null;
-          const color = getDpeColor(re.etiquette_dpe);
-          const popup = <Popup><PropertyPopup re={re} /></Popup>;
-
-          if (re.polygon_geojson) {
-            let geometry: any;
-            try { geometry = JSON.parse(re.polygon_geojson); } catch { geometry = null; }
-            if (geometry) {
-              return (
-                <GeoJSON
-                  key={re.id_mutation + "-poly-" + index}
-                  data={geometry}
-                  style={{
-                    fillColor: color,
-                    color: "white",
-                    weight: 1.5,
-                    fillOpacity: 0.65,
-                  }}
-                >
-                  {popup}
-                </GeoJSON>
-              );
-            }
-          }
-
-          // Fallback: cercle
-          return (
-            <CircleMarker
-              key={re.id_mutation + "-dot-" + index}
-              center={[re.latitude, re.longitude]}
-              radius={6}
-              pathOptions={{
-                fillColor: color,
-                color: "white",
-                weight: 1.5,
-                fillOpacity: 0.85,
-              }}
-            >
-              {popup}
-            </CircleMarker>
-          );
-        })}
+        {/* ── Render markers efficiently using useMemo ── */}
+        {zoom >= 12 && (
+          <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={50}
+            showCoverageOnHover={false}
+            iconCreateFunction={(cluster: any) => {
+              return L.divIcon({
+                html: `<div><span>${cluster.getChildCount()}</span></div>`,
+                className: 'marker-cluster-custom',
+                iconSize: L.point(40, 40, true),
+              });
+            }}
+          >
+            {markers}
+          </MarkerClusterGroup>
+        )}
       </MapContainer>
     </div>
   );
