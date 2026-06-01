@@ -9,4 +9,5 @@ dbt_project:
       pass: "{{ env_var('POSTGRES_PASSWORD', 'postgres') }}"
       dbname: "{{ env_var('POSTGRES_DB', 'real_estate_db') }}"
       schema: gold
+      search_path: "gold, public"
   target: dev

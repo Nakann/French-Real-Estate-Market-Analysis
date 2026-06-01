@@ -36,7 +36,7 @@ ventes_count AS (
     HAVING COUNT(*) = 1
 ),
 
-ventes AS (
+ventes AS MATERIALIZED (
     SELECT r.*
     FROM raw_ventes r
     INNER JOIN ventes_count vc ON r.id_mutation = vc.id_mutation
@@ -50,7 +50,7 @@ ventes AS (
 ),
 
 -- ─── Vérification spatiale ───────────────────────────────────────────────────
-verif AS (
+verif AS MATERIALIZED (
     SELECT 
         id_mutation, 
         MAX(id_ban) AS id_ban,
@@ -60,7 +60,7 @@ verif AS (
 ),
 
 -- ─── DPE : un enregistrement par adresse BAN ─────────────────────────────────────
-dpe_par_ban AS (
+dpe_par_ban AS MATERIALIZED (
     SELECT DISTINCT ON (identifiant_ban)
         identifiant_ban,
         etiquette_dpe,
@@ -76,20 +76,6 @@ dpe_par_ban AS (
 -- ─── Filosofi : déjà pivoté ───────────────────────────────────────────────────
 socio AS (
     SELECT * FROM {{ ref('stg_filosofi') }}
-),
-
--- ─── Zones Inondables ────────────────────────────────────────────────────────
-ventes_inondables AS (
-    SELECT
-        v.id_mutation,
-        BOOL_OR(ST_Intersects(
-            ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326),
-            zi.geom
-        )) AS in_zone_inondable
-    FROM ventes v
-    INNER JOIN {{ ref('stg_zones_inondables') }} zi 
-      ON ST_Intersects(ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326), zi.geom)
-    GROUP BY v.id_mutation
 )
 
 -- ─── Jointure finale ──────────────────────────────────────────────────────────
@@ -119,11 +105,16 @@ SELECT
     -- Fiabilité Localisation
     verif.distance_meters AS distance_ban,
     -- Risques naturels
-    COALESCE(zi.in_zone_inondable, FALSE) AS in_zone_inondable
+    COALESCE(zi.in_zone, FALSE) AS in_zone_inondable
 
 FROM ventes v
 LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation
 LEFT JOIN dpe_par_ban    d ON d.identifiant_ban = verif.id_ban
 LEFT JOIN socio          s ON s.code_commune = v.code_commune
-LEFT JOIN ventes_inondables zi ON zi.id_mutation = v.id_mutation
+LEFT JOIN LATERAL (
+    SELECT TRUE AS in_zone
+    FROM {{ ref('stg_zones_inondables') }} z
+    WHERE ST_Intersects(ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326), z.geom)
+    LIMIT 1
+) zi ON TRUE
 

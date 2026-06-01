@@ -24,6 +24,6 @@ SELECT
     source_nom_voie,
     certification_commune,
     -- Création de l'objet spatial
-    ST_SetSRID(ST_MakePoint(CAST(lon AS FLOAT), CAST(lat AS FLOAT)), 4326) AS geometry
+    public.ST_SetSRID(public.ST_MakePoint(CAST(lon AS FLOAT), CAST(lat AS FLOAT)), 4326) AS geometry
 FROM {{ source('bronze', 'raw_ban') }}
 WHERE lon IS NOT NULL AND lat IS NOT NULL AND lon != '' AND lat != ''
