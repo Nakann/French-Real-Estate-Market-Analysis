@@ -466,23 +466,57 @@ export default function Map({
           <GeoJSON
             key={"floodzones-" + Date.now()}
             data={floodZones}
-            style={() => ({
-              fillColor: '#3b82f6', // blue-500
-              weight: 1.5,
-              opacity: 0.8,
-              color: '#1d4ed8', // blue-700
-              fillOpacity: 0.3,
-              dashArray: '3'
-            })}
+            style={(feature) => {
+              const props = feature?.properties || {};
+              // Recherche d'un mot-clé de risque ou de couleur dans les propriétés
+              const rawData = JSON.stringify(props).toLowerCase();
+              let fillColor = '#3b82f6'; // default blue-500
+              let color = '#1d4ed8';     // default blue-700
+              
+              if (rawData.includes('rouge') || rawData.includes('fort') || rawData.includes('élevé')) {
+                fillColor = '#ef4444'; // red-500
+                color = '#b91c1c';     // red-700
+              } else if (rawData.includes('orange') || rawData.includes('moyen')) {
+                fillColor = '#f97316'; // orange-500
+                color = '#c2410c';     // orange-700
+              } else if (rawData.includes('bleu') || rawData.includes('faible')) {
+                fillColor = '#3b82f6'; // blue-500
+                color = '#1d4ed8';     // blue-700
+              }
+
+              return {
+                fillColor: fillColor,
+                weight: 2,
+                opacity: 0.9,
+                color: color,
+                fillOpacity: 0.35,
+                dashArray: '5 5'
+              };
+            }}
             onEachFeature={(feature, layer) => {
               const props = feature.properties;
+              
+              // Helper pour trouver un nom et un risque de façon générique
+              const riskStr = JSON.stringify(props).toLowerCase();
+              let niveauAffiche = props.niveau_risque || 'Non spécifié';
+              if (!props.niveau_risque) {
+                if (riskStr.includes('rouge') || riskStr.includes('fort')) niveauAffiche = 'Fort (Zone Rouge)';
+                else if (riskStr.includes('orange') || riskStr.includes('moyen')) niveauAffiche = 'Moyen (Zone Orange)';
+                else if (riskStr.includes('bleu') || riskStr.includes('faible')) niveauAffiche = 'Faible (Zone Bleue)';
+              }
+
               layer.bindTooltip(
-                `<div class="text-sm font-sans text-blue-900">
-                  <strong>Zone Inondable</strong><br/>
-                  Zone: ${props.nom_zone || 'Inconnue'}<br/>
-                  Risque: <span class="uppercase font-bold">${props.niveau_risque || 'N/A'}</span>
+                `<div class="text-sm font-sans text-slate-800 p-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                    </svg>
+                    <strong class="text-blue-900">Zonage PPRI</strong>
+                  </div>
+                  Zone : <strong>${props.nom_zone || props.code_zone || 'Inconnue'}</strong><br/>
+                  Risque : <span class="uppercase font-bold text-slate-700">${niveauAffiche}</span>
                 </div>`,
-                { sticky: true }
+                { sticky: true, className: "bg-white/90 backdrop-blur shadow-md rounded-md border-0" }
               );
             }}
           />
