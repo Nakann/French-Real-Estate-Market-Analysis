@@ -37,7 +37,8 @@ ventes_count AS (
 ),
 
 ventes AS MATERIALIZED (
-    SELECT r.*
+    SELECT r.*,
+           ST_SetSRID(ST_MakePoint(r.longitude, r.latitude), 4326) AS geom
     FROM raw_ventes r
     INNER JOIN ventes_count vc ON r.id_mutation = vc.id_mutation
     WHERE r.type_local IN ('Appartement', 'Maison')
@@ -104,17 +105,11 @@ SELECT
     s.indice_gini,
     -- Fiabilité Localisation
     verif.distance_meters AS distance_ban,
-    -- Risques naturels
-    COALESCE(zi.in_zone, FALSE) AS in_zone_inondable
+    -- Risques naturels (Désactivé pour perfs de la démo pour le moment)
+    FALSE AS in_zone_inondable
 
 FROM ventes v
 LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation
 LEFT JOIN dpe_par_ban    d ON d.identifiant_ban = verif.id_ban
 LEFT JOIN socio          s ON s.code_commune = v.code_commune
-LEFT JOIN LATERAL (
-    SELECT TRUE AS in_zone
-    FROM {{ ref('stg_zones_inondables') }} z
-    WHERE ST_Intersects(ST_SetSRID(ST_MakePoint(v.longitude, v.latitude), 4326), z.geom)
-    LIMIT 1
-) zi ON TRUE
 

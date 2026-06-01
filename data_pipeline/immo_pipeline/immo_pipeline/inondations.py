@@ -5,7 +5,7 @@ import os
 import requests
 
 @asset(
-    group_name="bronze",
+    group_name="ingestion",
     description="Télécharge les zones inondables (PPR Inondation) depuis l'API Géorisques (WFS) pour la Loire-Atlantique."
 )
 def raw_zones_inondables(context: AssetExecutionContext):
