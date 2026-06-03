@@ -69,10 +69,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
     const prixMoy = avecPrix.length > 0
       ? Math.round(avecPrix.reduce((s, r) => s + Number(r.prix_m2), 0) / avecPrix.length)
       : null;
-    const avecGini = filtered.filter(r => r.indice_gini != null && r.indice_gini > 0);
-    const giniMoy = avecGini.length > 0
-      ? (avecGini.reduce((s, r) => s + Number(r.indice_gini), 0) / avecGini.length).toFixed(2)
-      : null;
+
     const avecPauvrete = filtered.filter(r => r.taux_pauvrete != null);
     const pauvreteMoy = avecPauvrete.length > 0
       ? (avecPauvrete.reduce((s, r) => s + Number(r.taux_pauvrete), 0) / avecPauvrete.length).toFixed(1)
@@ -88,7 +85,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
       if (r.etiquette_dpe) dpeDist[r.etiquette_dpe] = (dpeDist[r.etiquette_dpe] || 0) + 1;
     });
 
-    return { nb, prixMoy, giniMoy, pauvreteMoy, nivVieMoy, dpeDist };
+    return { nb, prixMoy, pauvreteMoy, nivVieMoy, dpeDist };
   }, [realEstates, filters]);
 
   const toggleDpe = (letter: string) => {
@@ -221,10 +218,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
               <span className="text-slate-500 text-xs">Taux de pauvreté</span>
               <span className="font-semibold text-rose-600 text-xs">{stats.pauvreteMoy ? stats.pauvreteMoy + " %" : "—"}</span>
             </div>
-            <div className="px-3 py-2 flex justify-between items-center">
-              <span className="text-slate-500 text-xs">Indice Gini</span>
-              <span className="font-semibold text-amber-600 text-xs">{stats.giniMoy ?? "—"}</span>
-            </div>
+
           </div>
         </section>
 

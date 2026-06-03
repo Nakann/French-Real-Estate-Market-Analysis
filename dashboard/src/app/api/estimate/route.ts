@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 
     // 2. Récupérer les stats socio-économiques INSEE de la commune
     const socioResult = await pool.query(`
-      SELECT niveau_vie_median, taux_pauvrete, indice_gini
+      SELECT niveau_vie_median, taux_pauvrete
       FROM gold.stg_filosofi
       WHERE code_commune = $1
     `, [code_commune]);
@@ -171,7 +171,6 @@ export async function POST(request: Request) {
       socio: socio ? {
         niveau_vie_median: socio.niveau_vie_median ? Math.round(parseFloat(socio.niveau_vie_median)) : null,
         taux_pauvrete: socio.taux_pauvrete ? parseFloat(socio.taux_pauvrete) : null,
-        indice_gini: socio.indice_gini ? parseFloat(socio.indice_gini) : null,
       } : null,
       dpe: {
         user_dpe: etiquette_dpe,

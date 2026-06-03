@@ -25,6 +25,8 @@ export async function GET(request: Request) {
           nom_commune,
           prix_m2_median,
           nb_mutations,
+          niveau_vie_median,
+          taux_pauvrete,
           ST_AsGeoJSON(geometry)::json AS geometry
         FROM gold.fact_communes
         WHERE ST_Intersects(geometry, ST_MakeEnvelope($1, $2, $3, $4, 4326))
@@ -43,7 +45,9 @@ export async function GET(request: Request) {
             code_commune: row.code_commune,
             nom_commune: row.nom_commune,
             prix_m2_median: row.prix_m2_median,
-            nb_mutations: row.nb_mutations
+            nb_mutations: row.nb_mutations,
+            niveau_vie_median: row.niveau_vie_median,
+            taux_pauvrete: row.taux_pauvrete,
           }
         }))
       };

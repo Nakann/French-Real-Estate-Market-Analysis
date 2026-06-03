@@ -23,6 +23,9 @@ SELECT
     c.nom_commune,
     c.geometry,
     s.prix_m2_median,
-    s.nb_mutations
+    s.nb_mutations,
+    f.niveau_vie_median,
+    f.taux_pauvrete
 FROM {{ ref('stg_communes') }} c
 LEFT JOIN immo_stats s ON c.code_commune = s.code_commune
+LEFT JOIN {{ ref('stg_filosofi') }} f ON c.code_commune = f.code_commune

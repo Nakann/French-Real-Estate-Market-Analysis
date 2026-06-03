@@ -520,8 +520,8 @@ export default function StatsPage() {
                 </div>
                 <div className="rounded-xl bg-amber-50 border border-amber-100 p-4">
                   <p className="text-xs text-amber-600 font-bold uppercase tracking-wider mb-1">Indice de Gini</p>
-                  <p className="text-2xl font-black text-amber-700">{fmtDec(data?.socio?.indice_gini, 3)}</p>
-                  <p className="text-[10px] text-amber-500 mt-0.5">0 = égalité parfaite · 1 = inégalité totale</p>
+                  <p className="text-2xl font-black text-amber-700">N/D</p>
+                  <p className="text-[10px] text-amber-500 mt-0.5">Non diffusé par l'INSEE au niveau commune</p>
                 </div>
               </div>
             )}

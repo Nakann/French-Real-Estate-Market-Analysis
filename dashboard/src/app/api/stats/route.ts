@@ -134,8 +134,7 @@ export async function GET(request: Request) {
       pool.query(`
         SELECT
           ROUND(AVG(niveau_vie_median)::numeric, 0) AS niveau_vie_median,
-          ROUND(AVG(taux_pauvrete)::numeric, 1)     AS taux_pauvrete,
-          ROUND(AVG(indice_gini)::numeric, 3)        AS indice_gini
+          ROUND(AVG(taux_pauvrete)::numeric, 1)     AS taux_pauvrete
         FROM gold.fact_immobilier
         WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
           ${socioClause}

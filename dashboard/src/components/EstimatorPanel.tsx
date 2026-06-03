@@ -27,7 +27,6 @@ interface EstimateResult {
   socio: {
     niveau_vie_median: number | null;
     taux_pauvrete: number | null;
-    indice_gini: number | null;
   } | null;
   dpe: {
     user_dpe: string;

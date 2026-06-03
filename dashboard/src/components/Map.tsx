@@ -188,7 +188,7 @@ function PropertyPopup({ re }: { re: RealEstate }) {
       )}
 
       {/* Filosofi */}
-      {(re.niveau_vie_median || re.taux_pauvrete || re.indice_gini) && (
+      {(re.niveau_vie_median || re.taux_pauvrete) && (
         <div className="px-4 py-3">
           <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-2">Socio-éco · Commune</p>
           <div className="space-y-1.5">
@@ -204,12 +204,7 @@ function PropertyPopup({ re }: { re: RealEstate }) {
                 <span className="font-semibold text-rose-600">{re.taux_pauvrete} %</span>
               </div>
             )}
-            {re.indice_gini && (
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Indice Gini</span>
-                <span className="font-semibold text-amber-600">{re.indice_gini}</span>
-              </div>
-            )}
+
           </div>
         </div>
       )}
