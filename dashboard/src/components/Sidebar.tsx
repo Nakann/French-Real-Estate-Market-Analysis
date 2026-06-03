@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 // ── Icons inline SVG (no dependency) ──────────────────────────────────────────
 const IconMap = () => (
@@ -285,6 +286,15 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
           </svg>
           Comparateur
         </button>
+        <Link
+          href="/stats"
+          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white text-sm font-semibold shadow-md transition-all cursor-pointer"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"/>
+          </svg>
+          Statistiques
+        </Link>
       </div>
 
       {/* ── Footer ── */}
