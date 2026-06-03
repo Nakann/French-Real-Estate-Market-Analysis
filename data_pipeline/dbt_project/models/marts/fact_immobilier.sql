@@ -17,6 +17,8 @@ WITH raw_ventes AS (
         date_mutation,
         valeur_fonciere,
         surface_reelle_bati,
+        nombre_pieces_principales,
+        surface_terrain,
         type_local,
         adresse_complete,
         code_commune,
@@ -109,7 +111,10 @@ SELECT
     FALSE AS in_zone_inondable,
     -- IRIS / Quartier
     q.code_iris,
-    q.nom_iris
+    q.nom_iris,
+    -- Caractéristiques additionnelles
+    v.nombre_pieces_principales,
+    v.surface_terrain
 
 FROM ventes v
 LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation

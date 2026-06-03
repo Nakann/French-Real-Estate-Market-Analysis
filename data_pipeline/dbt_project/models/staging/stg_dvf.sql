@@ -12,6 +12,8 @@ parsed AS (
         code_commune,
         code_departement,
         CAST(NULLIF(surface_reelle_bati, '') AS NUMERIC) AS surface_reelle_bati,
+        CAST(NULLIF(nombre_pieces_principales, '') AS INTEGER) AS nombre_pieces_principales,
+        CAST(REPLACE(NULLIF(surface_terrain, ''), ',', '.') AS NUMERIC) AS surface_terrain,
         type_local,
         CAST(REPLACE(NULLIF(longitude, ''), ',', '.') AS NUMERIC) AS longitude,
         CAST(REPLACE(NULLIF(latitude, ''), ',', '.') AS NUMERIC) AS latitude,
