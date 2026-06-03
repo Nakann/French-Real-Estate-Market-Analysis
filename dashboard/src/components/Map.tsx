@@ -46,6 +46,8 @@ interface RealEstate {
   polygon_geojson: string | null;
   distance_ban: number | null;
   in_zone_inondable: boolean;
+  code_iris?: string | null;
+  nom_iris?: string | null;
 }
 
 interface CommuneGeoJSON {
@@ -94,6 +96,11 @@ function PropertyPopup({ re }: { re: RealEstate }) {
           <div>
             <p className="font-bold text-slate-900 text-sm leading-snug">{re.type_local || "Bien immobilier"}</p>
             <p className="text-xs text-slate-400 mt-0.5">{re.adresse_complete || re.code_commune}</p>
+            {re.nom_iris && (
+              <p className="text-[10px] text-teal-600 font-bold mt-1 bg-teal-50/50 px-1.5 py-0.5 rounded border border-teal-100/30 inline-block">
+                📍 Quartier : {re.nom_iris}
+              </p>
+            )}
           </div>
           {re.etiquette_dpe && (
             <span

@@ -42,7 +42,9 @@ export async function GET(request: Request) {
         taux_pauvrete,
         indice_gini,
         distance_ban,
-        in_zone_inondable
+        in_zone_inondable,
+        code_iris,
+        nom_iris
       FROM gold.fact_immobilier
       WHERE latitude BETWEEN $1 AND $2
         AND longitude BETWEEN $3 AND $4

@@ -94,6 +94,11 @@ function KpiCard({ label, value, icon, color }: { label: string; value: string; 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function StatsPage() {
   const [commune, setCommune] = useState("");
+  const [communeCode, setCommuneCode] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [irisCode, setIrisCode] = useState("");
+  const [irisList, setIrisList] = useState<{ code_iris: string; nom_iris: string }[]>([]);
+
   const [type, setType] = useState<"all" | "Maison" | "Appartement">("all");
   const [yearMin, setYearMin] = useState(2021);
   const [yearMax, setYearMax] = useState(2025);
@@ -107,7 +112,8 @@ export default function StatsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        commune,
+        commune: communeCode, // Envoi du code commune INSEE
+        iris: irisCode,       // Envoi du code IRIS
         type,
         yearMin: String(yearMin),
         yearMax: String(yearMax),
@@ -120,23 +126,53 @@ export default function StatsPage() {
     } finally {
       setLoading(false);
     }
-  }, [commune, type, yearMin, yearMax]);
+  }, [communeCode, irisCode, type, yearMin, yearMax]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  // Suggestions de villes
-  const handleCommuneInput = (val: string) => {
-    setCommune(val);
-    if (val.length >= 2) {
-      const filtered = COMMUNES_CONNUES.filter(c =>
-        c.label.toLowerCase().startsWith(val.toLowerCase())
-      );
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else {
+  // Autocomplétion dynamique des villes depuis la base de données
+  useEffect(() => {
+    if (searchQuery.trim().length < 2 || searchQuery === commune) {
+      setSuggestions([]);
       setShowSuggestions(false);
+      return;
     }
-  };
+    const delayDebounce = setTimeout(() => {
+      fetch(`/api/stats/communes?q=${searchQuery}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setSuggestions(data.map(item => ({ label: item.nom, code: item.code_commune })));
+            setShowSuggestions(data.length > 0);
+          }
+        })
+        .catch((err) => console.error("Autocomplete error:", err));
+    }, 250);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, commune]);
+
+  // Chargement de la liste des quartiers de la commune sélectionnée
+  useEffect(() => {
+    if (!communeCode) {
+      setIrisList([]);
+      setIrisCode("");
+      return;
+    }
+    fetch(`/api/stats/iris?commune=${communeCode}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setIrisList(data);
+          setIrisCode(""); // réinitialiser le quartier à chaque changement de ville
+        } else {
+          setIrisList([]);
+        }
+      })
+      .catch((err) => {
+        console.error("IRIS list load error:", err);
+        setIrisList([]);
+      });
+  }, [communeCode]);
 
   // Evolution: pivot maison / appart
   const evolutionPivot = (() => {
@@ -203,7 +239,7 @@ export default function StatsPage() {
             </svg>
             Filtres
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className={`grid grid-cols-1 gap-5 ${irisList.length > 0 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
 
             {/* Ville */}
             <div className="relative">
@@ -215,15 +251,23 @@ export default function StatsPage() {
                 <input
                   ref={inputRef}
                   type="text"
-                  value={commune}
-                  onChange={e => handleCommuneInput(e.target.value)}
+                  value={searchQuery}
+                  onChange={e => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value === "") {
+                      setCommune("");
+                      setCommuneCode("");
+                      setIrisCode("");
+                      setIrisList([]);
+                    }
+                  }}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                  onFocus={() => commune.length >= 2 && setShowSuggestions(suggestions.length > 0)}
+                  onFocus={() => searchQuery.length >= 2 && setShowSuggestions(suggestions.length > 0)}
                   placeholder="Ex: Nantes, Rennes…"
                   className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition placeholder:text-slate-300 text-slate-800"
                 />
-                {commune && (
-                  <button onClick={() => { setCommune(""); setShowSuggestions(false); }}
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(""); setCommune(""); setCommuneCode(""); setIrisCode(""); setIrisList([]); setShowSuggestions(false); }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -232,10 +276,10 @@ export default function StatsPage() {
                 )}
               </div>
               {/* Suggestions rapides */}
-              {!commune && (
+              {!searchQuery && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {COMMUNES_CONNUES.slice(0, 6).map(c => (
-                    <button key={c.code} onClick={() => setCommune(c.label)}
+                    <button key={c.code} onClick={() => { setCommune(c.label); setCommuneCode(c.code); setSearchQuery(c.label); }}
                       className="text-[10px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 font-semibold hover:bg-indigo-100 transition border border-indigo-100">
                       {c.label}
                     </button>
@@ -245,14 +289,33 @@ export default function StatsPage() {
               {showSuggestions && (
                 <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
                   {suggestions.map(s => (
-                    <button key={s.code} onClick={() => { setCommune(s.label); setShowSuggestions(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 text-slate-700 font-medium transition">
-                      {s.label}
+                    <button key={s.code} onClick={() => { setCommune(s.label); setCommuneCode(s.code); setSearchQuery(s.label); setShowSuggestions(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 text-slate-700 font-medium transition border-b border-slate-100">
+                      {s.label} <span className="text-slate-400">({s.code.slice(0, 2)})</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Quartier / IRIS (Affiché conditionnellement) */}
+            {irisList.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Quartier / IRIS</label>
+                <select
+                  value={irisCode}
+                  onChange={e => setIrisCode(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition text-slate-800 font-semibold"
+                >
+                  <option value="">Tous les quartiers</option>
+                  {irisList.map(item => (
+                    <option key={item.code_iris} value={item.code_iris}>
+                      {item.nom_iris.replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Type de bien */}
             <div>
@@ -304,7 +367,7 @@ export default function StatsPage() {
               <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
               <line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
-            Indicateurs clés {commune ? `· ${commune}` : "· Toute la région"}
+            Indicateurs clés {commune ? `· ${commune}` : "· Toute la région"} {irisCode && irisList.find(i => i.code_iris === irisCode) ? `(${irisList.find(i => i.code_iris === irisCode)?.nom_iris})` : ""}
           </h2>
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

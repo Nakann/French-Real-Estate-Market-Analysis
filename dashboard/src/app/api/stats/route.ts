@@ -6,6 +6,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const commune = searchParams.get('commune')?.trim() || '';
+  const iris = searchParams.get('iris')?.trim() || '';
   const type = searchParams.get('type') || 'all';
   const yearMin = parseInt(searchParams.get('yearMin') || '2021');
   const yearMax = parseInt(searchParams.get('yearMax') || '2025');
@@ -22,6 +23,13 @@ export async function GET(request: Request) {
     paramIdx += 2;
   }
 
+  let irisClause = '';
+  if (iris) {
+    irisClause = `AND code_iris = $${paramIdx}`;
+    params.push(iris);
+    paramIdx += 1;
+  }
+
   let typeClause = '';
   if (type !== 'all') {
     typeClause = `AND type_local = $${paramIdx}`;
@@ -32,10 +40,22 @@ export async function GET(request: Request) {
   const baseWhere = `
     WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
       ${communeClause}
+      ${irisClause}
       ${typeClause}
       AND prix_m2 IS NOT NULL
       AND prix_m2 BETWEEN 500 AND 25000
   `;
+
+  // Custom params for the socio-economic query (only filter by commune or iris, not local type)
+  const socioParams: (string | number)[] = [yearMin, yearMax];
+  let socioClause = '';
+  if (iris) {
+    socioClause = `AND code_iris = $3`;
+    socioParams.push(iris);
+  } else if (commune) {
+    socioClause = `AND code_commune = $3`;
+    socioParams.push(commune);
+  }
 
   try {
     const [kpis, evolution, dpe, histo, socio] = await Promise.all([
@@ -74,6 +94,7 @@ export async function GET(request: Request) {
         FROM gold.fact_immobilier
         WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
           ${communeClause}
+          ${irisClause}
           ${typeClause}
           AND etiquette_dpe IS NOT NULL
         GROUP BY etiquette_dpe
@@ -117,9 +138,9 @@ export async function GET(request: Request) {
           ROUND(AVG(indice_gini)::numeric, 3)        AS indice_gini
         FROM gold.fact_immobilier
         WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
-          ${communeClause}
+          ${socioClause}
           AND niveau_vie_median IS NOT NULL
-      `, params.slice(0, communeClause ? paramIdx - (type !== 'all' ? 2 : 0) : 2)),
+      `, socioParams),
     ]);
 
     return NextResponse.json({

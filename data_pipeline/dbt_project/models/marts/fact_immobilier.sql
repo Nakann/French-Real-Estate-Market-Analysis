@@ -106,10 +106,19 @@ SELECT
     -- Fiabilité Localisation
     verif.distance_meters AS distance_ban,
     -- Risques naturels (Désactivé pour perfs de la démo pour le moment)
-    FALSE AS in_zone_inondable
+    FALSE AS in_zone_inondable,
+    -- IRIS / Quartier
+    q.code_iris,
+    q.nom_iris
 
 FROM ventes v
 LEFT JOIN verif          verif ON verif.id_mutation = v.id_mutation
 LEFT JOIN dpe_par_ban    d ON d.identifiant_ban = verif.id_ban
 LEFT JOIN socio          s ON s.code_commune = v.code_commune
+LEFT JOIN {{ ref('stg_iris') }} q
+    ON v.code_commune = q.code_commune
+    AND public.ST_Within(
+        v.geom,
+        q.geom
+    )
 
