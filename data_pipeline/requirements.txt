@@ -6,3 +6,6 @@ dagster
 dagster-webserver
 dagster-dbt
 requests
+pandas
+openpyxl
+sqlalchemy

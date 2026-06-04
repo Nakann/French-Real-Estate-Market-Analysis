@@ -13,6 +13,43 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  data_pipeline:
+    build:
+      context: ./data_pipeline
+      dockerfile: Dockerfile
+    container_name: dagster_pipeline
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: real_estate_db
+      POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/real_estate_db
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    restart: always
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: real_estate_dashboard
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: real_estate_db
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    restart: always
 
 volumes:
   pgdata:
+
