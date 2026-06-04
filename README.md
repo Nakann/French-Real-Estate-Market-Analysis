@@ -1,4 +1,4 @@
-# French Real Estate Market Analysis (SAE 2026)
+# French Real Estate Market Analysis (BI Project)
 
 **Auteurs : Nathan AVENEL et Adrien PINEAU**
 
@@ -10,39 +10,50 @@ Ce projet de Business Intelligence (BI) immobilier permet de répondre à la pro
 ```mermaid
 graph TD
     subgraph sources [Sources de Données]
-        DVF(Fichiers DVF)
-        DPE(Fichiers DPE)
-        INSEE(Fichiers INSEE/FILOSOFI)
+        DVF(Fichiers DVF - Transactions)
+        DPE(Fichiers DPE - Logements ADEME)
+        INSEE(Données socio-économiques FILOSOFI)
+        BAN(Base Adresse Nationale)
+        IRIS(Contours géographiques IRIS - IGN)
+        RISK(Zones inondables PPRI)
     end
 
-    subgraph pipeline [Data Pipeline Python, Dagster et dbt]
+    subgraph pipeline [Pipeline de Données]
         Dagster(Orchestrateur Dagster)
-        Polars(Polars / psycopg)
-        DBT(dbt Core)
+        Polars(Polars & psycopg COPY)
+        DBT(dbt Core - Modélisation)
     end
 
-    subgraph bdd [Base de données]
-        PG[(PostgreSQL + PostGIS)]
-        SchemaBronze[Staging / Raw]
-        SchemaGold[Marts / Clean]
+    subgraph bdd [PostgreSQL + PostGIS]
+        SchemaBronze[Schéma bronze / Tables brutes]
+        SchemaGold[Schéma gold / Vues & Tables Marts]
     end
 
-    subgraph dash [Dashboard Next.js]
-        SC[Server Components API]
-        UI[Frontend UI Interactive]
+    subgraph dash [Dashboard Fullstack Next.js]
+        API[Routes API Next.js - pg Pool]
+        MapUI[Carte interactive - Mapbox & Deck.gl]
+        StatsUI[Analyses & Statistiques avancées]
+        EstUI[Estimateur de prix intelligent]
+        CompUI[Comparateur de quartiers]
     end
 
-    DVF -->|Orchestré par Dagster| Polars
-    DPE -->|Orchestré par Dagster| Polars
-    INSEE -->|Orchestré par Dagster| Polars
+    DVF -->|Ingéré par Dagster| Polars
+    DPE -->|Ingéré par Dagster| Polars
+    INSEE -->|Ingéré par Dagster| Polars
+    BAN -->|Ingéré par Dagster| Polars
+    IRIS -->|Ingéré par Dagster| Polars
+    RISK -->|Ingéré par Dagster| Polars
     
     Polars -->|Bulk COPY ultra-rapide| SchemaBronze
     
-    SchemaBronze -->|Transformations SQL| DBT
-    DBT -->|Création table matérialisée| SchemaGold
+    SchemaBronze -->|Transformations & Nettoyages SQL| DBT
+    DBT -->|Matérialisation & Indexation Spatiale| SchemaGold
     
-    SchemaGold -->|Requêtes géospatiales| SC
-    SC -->|Données enrichies (Polygones IGN)| UI
+    SchemaGold -->|Requêtes géospatiales directes| API
+    API -->|Propriétés, stats & tracés IGN| MapUI
+    API -->|KPIs, graphes & DPE| StatsUI
+    API -->|Modèle d'estimation locale| EstUI
+    API -->|Comparaison socio-éco & m2| CompUI
 ```
 
 ## 🛠️ Technologies Utilisées
@@ -62,11 +73,15 @@ Avant de pouvoir lancer le projet, vous devez installer les dépendances et conf
 À la racine du projet (et également dans le dossier `dashboard/` sous le nom `.env.local`), créez un fichier pour configurer l'accès à PostgreSQL et à Dagster.
 Voici l'exemple de ce que le fichier doit contenir :
 ```ini
-# Base de données PostgreSQL (Défaut : postgres/postgres)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/real_estate_db
+# Base de données PostgreSQL - Variables modulables
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=real_estate_db
 
 # Dossier local pour Dagster
-DAGSTER_HOME=D:\Votre\Chemin\Absolu\Vers\Le\Projet\.dagster
+DAGSTER_HOME=D:\Votre\Chemin\Vers\Le\Projet\.dagster
 ```
 
 ### 2. Environnement Python (Pipeline)
@@ -123,6 +138,32 @@ make dev-front
 ```
 * Ouvrez votre navigateur sur **http://localhost:3000**
 * Vous pouvez maintenant explorer la carte, filtrer par DPE, rechercher des communes et voir les géométries dynamiques se charger en temps réel !
+
+---
+
+## 🌟 Fonctionnalités du Dashboard
+
+Le dashboard interactif regroupe plusieurs modules analytiques indispensables :
+
+1. **🗺️ Carte Interactive (DVF & Risques) :**
+   * Affichage des ventes immobilières sous forme de points précis avec un code couleur représentant l'étiquette DPE du logement.
+   * Rendu dynamique en temps réel des parcelles cadastrales (IGN ApiCarto) et des zones de risques inondables (PPRI) lors du zoom.
+   * Navigation par commune et affichage des fiches détaillées des biens.
+
+2. **📊 Analyses & Statistiques Avancées :**
+   * **KPIs Globaux :** Suivi du volume de transactions, du prix médian au m², de la surface habitable moyenne et du pourcentage de logements diagnostiqués.
+   * **Évolution Temporelle :** Graphe historique de l'évolution trimestrielle des prix médians par type de bien (Maison vs Appartement).
+   * **Énergie :** Graphique de répartition des étiquettes de performance énergétique (DPE).
+   * **Distribution des Prix :** Histogramme des prix de vente au m².
+
+3. **🔮 Estimateur de Prix Intelligent :**
+   * Saisie des caractéristiques d'un bien (surface, pièces, DPE, type de bien).
+   * Calcul d'une estimation personnalisée basée sur les ventes réelles de la base DVF dans le même quartier (code IRIS) et la même commune.
+   * Indication de l'impact énergétique (DPE) et des revenus médians locaux (INSEE) sur la valeur estimée.
+
+4. **⚖️ Comparateur de Territoires :**
+   * Outil permettant de comparer deux quartiers (IRIS) ou deux communes côte à côte.
+   * Analyse comparative des indicateurs de prix au m², de la structure des types de biens vendus, et des caractéristiques socio-économiques INSEE (revenu médian local, taux de pauvreté).
 
 ---
 

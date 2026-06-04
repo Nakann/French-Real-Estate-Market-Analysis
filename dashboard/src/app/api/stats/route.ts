@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+import pool from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,14 +11,16 @@ export async function GET(request: Request) {
 
   // Build WHERE clauses as parameterized strings
   // We'll use positional params properly
-  const params: (string | number)[] = [yearMin, yearMax];
+  const startDate = `${yearMin}-01-01`;
+  const endDate = `${yearMax}-12-31`;
+  const params: (string | number)[] = [startDate, endDate];
   let paramIdx = 3;
 
   let communeClause = '';
   if (commune) {
-    communeClause = `AND (adresse_complete ILIKE $${paramIdx} OR code_commune = $${paramIdx + 1})`;
-    params.push(`%${commune}%`, commune);
-    paramIdx += 2;
+    communeClause = `AND code_commune = $${paramIdx}`;
+    params.push(commune);
+    paramIdx += 1;
   }
 
   let irisClause = '';
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   }
 
   const baseWhere = `
-    WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
+    WHERE date_mutation BETWEEN $1 AND $2
       ${communeClause}
       ${irisClause}
       ${typeClause}
@@ -46,16 +46,8 @@ export async function GET(request: Request) {
       AND prix_m2 BETWEEN 500 AND 25000
   `;
 
-  // Custom params for the socio-economic query (only filter by commune or iris, not local type)
-  const socioParams: (string | number)[] = [yearMin, yearMax];
-  let socioClause = '';
-  if (iris) {
-    socioClause = `AND code_iris = $3`;
-    socioParams.push(iris);
-  } else if (commune) {
-    socioClause = `AND code_commune = $3`;
-    socioParams.push(commune);
-  }
+
+
 
   try {
     const [kpis, evolution, dpe, histo, socio] = await Promise.all([
@@ -92,7 +84,7 @@ export async function GET(request: Request) {
           COUNT(*)::int  AS nb,
           ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS pct
         FROM gold.fact_immobilier
-        WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
+        WHERE date_mutation BETWEEN $1 AND $2
           ${communeClause}
           ${irisClause}
           ${typeClause}
@@ -130,16 +122,16 @@ export async function GET(request: Request) {
         ORDER BY ordre, type_local
       `, params),
 
-      // 5. Socio-économique
+      // 5. Socio-économique depuis fact_communes (source unifiée)
       pool.query(`
         SELECT
-          ROUND(AVG(niveau_vie_median)::numeric, 0) AS niveau_vie_median,
-          ROUND(AVG(taux_pauvrete)::numeric, 1)     AS taux_pauvrete
-        FROM gold.fact_immobilier
-        WHERE EXTRACT(YEAR FROM date_mutation) BETWEEN $1 AND $2
-          ${socioClause}
-          AND niveau_vie_median IS NOT NULL
-      `, socioParams),
+          niveau_vie_median,
+          taux_pauvrete,
+          indice_gini
+        FROM gold.fact_communes
+        WHERE code_commune = $1
+        LIMIT 1
+      `, [commune || null]),
     ]);
 
     return NextResponse.json({

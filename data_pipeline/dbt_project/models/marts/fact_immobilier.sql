@@ -4,7 +4,9 @@
     indexes=[
       {'columns': ['latitude', 'longitude']},
       {'columns': ['code_commune']},
-      {'columns': ['etiquette_dpe']}
+      {'columns': ['etiquette_dpe']},
+      {'columns': ['code_iris']},
+      {'columns': ['date_mutation']}
     ]
   )
 }}
@@ -81,6 +83,7 @@ socio AS (
     SELECT * FROM {{ ref('stg_filosofi') }}
 )
 
+
 -- ─── Jointure finale ──────────────────────────────────────────────────────────
 SELECT
     v.id_mutation,
@@ -109,9 +112,9 @@ SELECT
     verif.distance_meters AS distance_ban,
     -- Risques naturels (Désactivé pour perfs de la démo pour le moment)
     FALSE AS in_zone_inondable,
-    -- IRIS / Quartier
-    q.code_iris,
-    q.nom_iris,
+    -- IRIS / Quartier (jointure spatiale ST_Within)
+    q.code_iris AS code_iris,
+    q.nom_iris  AS nom_iris,
     -- Caractéristiques additionnelles
     v.nombre_pieces_principales,
     v.surface_terrain

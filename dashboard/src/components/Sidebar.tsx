@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 // ── Icons inline SVG (no dependency) ──────────────────────────────────────────
@@ -52,16 +52,59 @@ interface SidebarProps {
   realEstates: any[];
   filters: { dpe: string[]; commune: string; showFloodZones: boolean };
   onFiltersChange: (f: { dpe: string[]; commune: string; showFloodZones: boolean }) => void;
+  onCommuneSelect: (lat: number, lon: number) => void;
   onOpenEstimator: () => void;
   onOpenComparator: () => void;
 }
 
-export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator, onOpenComparator }: SidebarProps) {
+export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect, onOpenEstimator, onOpenComparator }: SidebarProps) {
+  const [filteredCommunes, setFilteredCommunes] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filters.commune || filters.commune.trim() === "") {
+      setFilteredCommunes([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/communes?query=${encodeURIComponent(filters.commune)}`, { signal: controller.signal })
+        .then(res => res.json())
+        .then(data => {
+          if (data.communes) {
+            setFilteredCommunes(data.communes);
+          }
+        })
+        .catch(err => {
+          if (err.name !== "AbortError") {
+            console.error("Error searching communes in Sidebar:", err);
+          }
+        });
+    }, 200);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [filters.commune]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // ── Stats computed on visible data ───────────────────────────────────────────
   const stats = useMemo(() => {
     const filtered = realEstates.filter(r =>
       (filters.dpe.length === 0 || filters.dpe.includes(r.etiquette_dpe)) &&
-      (filters.commune === "" || (r.adresse_complete || "").toLowerCase().includes(filters.commune.toLowerCase()) || (r.code_commune || "").includes(filters.commune))
+      (filters.commune === "" || (r.adresse_complete || "").toLowerCase().includes(filters.commune.toLowerCase()) || (r.code_commune || "").includes(filters.commune) || (r.nom_commune || "").toLowerCase().includes(filters.commune.toLowerCase()))
     );
 
     const nb = filtered.length;
@@ -105,7 +148,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
         </div>
         <div>
           <h1 className="text-base font-bold text-slate-900 leading-tight">ImmoExplorer</h1>
-          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">SAE 602 · BI Immobilière</p>
+          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">BI Project · Immobilière</p>
         </div>
       </div>
 
@@ -122,17 +165,41 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
           {/* Recherche commune */}
           <div className="mb-3">
             <label className="block text-xs text-slate-500 mb-1 font-medium">Commune / Code postal</label>
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
                 <IconSearch />
               </span>
               <input
                 type="text"
                 value={filters.commune}
-                onChange={e => onFiltersChange({ ...filters, commune: e.target.value })}
+                onChange={e => {
+                  onFiltersChange({ ...filters, commune: e.target.value });
+                  setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
                 placeholder="Ex: Nantes, 44000..."
                 className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition placeholder:text-slate-300 text-slate-800"
               />
+              {showDropdown && filteredCommunes.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[1100]">
+                  {filteredCommunes.map((commune) => (
+                    <button
+                      key={commune.code}
+                      onClick={() => {
+                        onFiltersChange({ ...filters, commune: commune.name });
+                        setShowDropdown(false);
+                        if (commune.latitude && commune.longitude) {
+                          onCommuneSelect(commune.latitude, commune.longitude);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs hover:bg-slate-50 text-slate-700 transition flex justify-between items-center cursor-pointer"
+                    >
+                      <span className="font-semibold">{commune.name}</span>
+                      <span className="text-[10px] text-slate-400">{commune.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -294,7 +361,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onOpenEstimator
       {/* ── Footer ── */}
       <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
         <p className="text-[10px] text-slate-400">© 2026 Nathan Avenel &amp; Adrien Pineau</p>
-        <span className="text-[10px] text-indigo-400 font-medium">SAE 602</span>
+        <span className="text-[10px] text-indigo-400 font-medium">BI Project</span>
       </div>
     </aside>
   );

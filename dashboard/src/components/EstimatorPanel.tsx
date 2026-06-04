@@ -35,7 +35,6 @@ interface EstimateResult {
 }
 
 export default function EstimatorPanel({ isOpen, onClose }: EstimatorPanelProps) {
-  const [communes, setCommunes] = useState<Commune[]>([]);
   const [filteredCommunes, setFilteredCommunes] = useState<Commune[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
@@ -64,30 +63,25 @@ export default function EstimatorPanel({ isOpen, onClose }: EstimatorPanelProps)
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch all communes on mount for instant client-side filtering
+  // Server-side commune search with debounce (évite de charger 35k communes)
   useEffect(() => {
-    fetch("/api/communes")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.communes) {
-          setCommunes(data.communes);
-        }
-      })
-      .catch((err) => console.error("Error loading communes:", err));
-  }, []);
-
-  // Filter communes as user types
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
+    if (!searchQuery.trim() || searchQuery === selectedCommune?.name) {
       setFilteredCommunes([]);
       return;
     }
-    const query = searchQuery.toLowerCase();
-    const filtered = communes
-      .filter((c) => c.name.toLowerCase().includes(query) || c.code.includes(query))
-      .slice(0, 10);
-    setFilteredCommunes(filtered);
-  }, [searchQuery, communes]);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/communes?query=${encodeURIComponent(searchQuery)}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.communes) setFilteredCommunes(data.communes.slice(0, 10));
+        })
+        .catch((err) => {
+          if (err.name !== 'AbortError') console.error("Error searching communes:", err);
+        });
+    }, 200);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [searchQuery, selectedCommune]);
 
   // Load IRIS list when commune changes
   useEffect(() => {

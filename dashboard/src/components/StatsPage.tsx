@@ -19,7 +19,7 @@ interface StatsData {
   evolution: { periode: string; type_local: string; prix_median: number; nb: number }[];
   dpe: { dpe: string; nb: number; pct: number }[];
   histo: { tranche: string; ordre: number; type_local: string; nb: number }[];
-  socio: { niveau_vie_median: number; taux_pauvrete: number; indice_gini: number };
+  socio: { niveau_vie_median: number | null; taux_pauvrete: number | null; indice_gini: number | null } | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -499,7 +499,7 @@ export default function StatsPage() {
           {/* Socio-éco */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h3 className="font-bold text-slate-800 mb-1">Indicateurs socio-économiques</h3>
-            <p className="text-xs text-slate-400 mb-5">Données FILOSOFI · Moyenne de la zone</p>
+            <p className="text-xs text-slate-400 mb-5">Données FILOSOFI INSEE · Source : fact_communes</p>
             {loading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_,i) => (
@@ -520,8 +520,12 @@ export default function StatsPage() {
                 </div>
                 <div className="rounded-xl bg-amber-50 border border-amber-100 p-4">
                   <p className="text-xs text-amber-600 font-bold uppercase tracking-wider mb-1">Indice de Gini</p>
-                  <p className="text-2xl font-black text-amber-700">N/D</p>
-                  <p className="text-[10px] text-amber-500 mt-0.5">Non diffusé par l'INSEE au niveau commune</p>
+                  <p className="text-2xl font-black text-amber-700">
+                    {data?.socio?.indice_gini != null ? fmtDec(data.socio.indice_gini, 3) : 'N/D'}
+                  </p>
+                  <p className="text-[10px] text-amber-500 mt-0.5">
+                    {data?.socio?.indice_gini != null ? 'inégalité de revenus (0=parfaite égalité)' : 'Non disponible pour cette commune'}
+                  </p>
                 </div>
               </div>
             )}

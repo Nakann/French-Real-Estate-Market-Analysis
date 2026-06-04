@@ -1,3 +1,11 @@
+{{ config(
+    materialized='table',
+    indexes=[
+      {'columns': ['id_mutation']},
+      {'columns': ['code_commune']}
+    ]
+) }}
+
 WITH raw AS (
     SELECT * FROM {{ source('bronze', 'raw_dvf') }}
 ),

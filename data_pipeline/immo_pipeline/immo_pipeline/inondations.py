@@ -9,27 +9,52 @@ import requests
     description="Télécharge les zones inondables (PPR Inondation) depuis l'API Géorisques (WFS) pour la Loire-Atlantique."
 )
 def raw_zones_inondables(context: AssetExecutionContext):
-    # L'API WFS de Géorisques pour les surfaces d'inondation (ex: EAIP ou PPRI)
-    # En cas d'indisponibilité du WFS, on utilise un fallback vers un jeu de données mock
-    
-    url_wfs = "https://georisques.gouv.fr/services?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=ms:PPRI_ZONE&OUTPUTFORMAT=application/json&cql_filter=code_insee%20LIKE%20%2744%25%27"
+    # API Géorisques WFS avec BBOX pour la Loire-Atlantique afin d'éviter les surcharges et timeouts
+    fmt = "application/json; subtype=geojson; charset=utf-8"
+    url_wfs = (
+        "https://www.georisques.gouv.fr/services"
+        "?SERVICE=WFS"
+        "&VERSION=2.0.0"
+        "&REQUEST=GetFeature"
+        "&TYPENAME=ms:PPRN_PERIMETRE_INOND"
+        f"&OUTPUTFORMAT={requests.utils.quote(fmt)}"
+        "&BBOX=46.8,-2.6,47.9,-1.1,urn:ogc:def:crs:EPSG::4326"
+    )
     
     context.log.info(f"Appel à l'API Géorisques WFS : {url_wfs}")
     
     features = []
     
     try:
-        # Timeout de 30 secondes car le WFS peut être lent
-        resp = requests.get(url_wfs, timeout=30)
+        # Timeout de 60 secondes car le WFS peut être lent
+        resp = requests.get(url_wfs, timeout=60)
         resp.raise_for_status()
         data = resp.json()
         
         if "features" not in data or len(data["features"]) == 0:
             raise ValueError("Aucune entité retournée par l'API Géorisques WFS.")
             
-        features = data["features"]
-        context.log.info(f"{len(features)} polygones inondables récupérés depuis Géorisques.")
-        
+        # Filtrer pour le département 44 (Loire-Atlantique) et mapper les propriétés pour correspondre à la table attendue
+        raw_feats = data["features"]
+        for feat in raw_feats:
+            props = feat.get("properties", {})
+            id_gaspar = props.get("id_gaspar", "")
+            if id_gaspar.startswith("44"):
+                mapped_feat = {
+                    "type": "Feature",
+                    "properties": {
+                        "id_ppri": id_gaspar,
+                        "nom_zone": props.get("lib_ppr", "PPR Inondation"),
+                        "niveau_risque": props.get("libelle_sous_etat", "Approuvé")
+                    },
+                    "geometry": feat.get("geometry", {})
+                }
+                features.append(mapped_feat)
+                
+        context.log.info(f"{len(features)} polygones inondables récupérés et filtrés pour la Loire-Atlantique.")
+        if len(features) == 0:
+            raise ValueError("Aucun polygone pour le département 44 après filtrage.")
+            
     except Exception as e:
         context.log.warning(f"Échec de l'API Géorisques ({e}). Utilisation d'un fallback pour la démo.")
         # Fallback pour la démo: Création de polygones factices

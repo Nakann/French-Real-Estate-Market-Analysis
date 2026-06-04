@@ -48,13 +48,16 @@ def raw_filosofi(context: dagster.AssetExecutionContext) -> dagster.MaterializeR
     import psycopg
     with psycopg.connect(DB_URL) as conn:
         with conn.cursor() as cur:
-            try:
-                cur.execute("DROP TABLE IF EXISTS bronze.raw_filosofi;")
-                cur.execute("DROP TABLE IF EXISTS bronze.raw_filosofi_metadata;")
-            except psycopg.errors.UndefinedTable:
-                conn.rollback()
-            else:
-                conn.commit()
+            cur.execute("CREATE SCHEMA IF NOT EXISTS bronze;")
+            # On s'assure que les tables existent d'abord avec les bonnes colonnes
+            columns_data = [f'"{col}" TEXT' for col in df_data.columns]
+            columns_meta = [f'"{col}" TEXT' for col in df_meta.columns]
+            cur.execute(f"CREATE TABLE IF NOT EXISTS bronze.raw_filosofi ({', '.join(columns_data)});")
+            cur.execute(f"CREATE TABLE IF NOT EXISTS bronze.raw_filosofi_metadata ({', '.join(columns_meta)});")
+            # Puis on les vide au lieu de les DROP pour ne pas casser les vues dépendantes
+            cur.execute("TRUNCATE TABLE bronze.raw_filosofi;")
+            cur.execute("TRUNCATE TABLE bronze.raw_filosofi_metadata;")
+            conn.commit()
                 
     ingestor.insert_dataframe(df_data, table_name="raw_filosofi", schema="bronze")
     ingestor.insert_dataframe(df_meta, table_name="raw_filosofi_metadata", schema="bronze")

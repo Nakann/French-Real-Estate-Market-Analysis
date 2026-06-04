@@ -25,7 +25,6 @@ interface CompareResult {
 }
 
 export default function ComparatorPanel({ isOpen, onClose }: ComparatorPanelProps) {
-  const [communes, setCommunes] = useState<Commune[]>([]);
   const [filteredCommunes, setFilteredCommunes] = useState<Commune[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
@@ -54,18 +53,25 @@ export default function ComparatorPanel({ isOpen, onClose }: ComparatorPanelProp
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Server-side commune search with debounce (évite de charger 35k communes)
   useEffect(() => {
-    fetch("/api/communes")
-      .then((res) => res.json())
-      .then((data) => { if (data.communes) setCommunes(data.communes); })
-      .catch((err) => console.error("Error loading communes:", err));
-  }, []);
-
-  useEffect(() => {
-    if (searchQuery.trim() === "") { setFilteredCommunes([]); return; }
-    const query = searchQuery.toLowerCase();
-    setFilteredCommunes(communes.filter((c) => c.name.toLowerCase().includes(query) || c.code.includes(query)).slice(0, 10));
-  }, [searchQuery, communes]);
+    if (!searchQuery.trim() || searchQuery === selectedCommune?.name) {
+      setFilteredCommunes([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/communes?query=${encodeURIComponent(searchQuery)}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.communes) setFilteredCommunes(data.communes.slice(0, 10));
+        })
+        .catch((err) => {
+          if (err.name !== 'AbortError') console.error("Error searching communes:", err);
+        });
+    }, 200);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [searchQuery, selectedCommune]);
 
   // Load IRIS list when commune changes
   useEffect(() => {

@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import pool from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,7 +14,7 @@ export async function GET(request: Request) {
         id_ppri, 
         nom_zone, 
         niveau_risque, 
-        ST_AsGeoJSON(geom)::jsonb as geometry
+        ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, 0.001))::jsonb as geometry
       FROM gold.stg_zones_inondables
     `;
     let params: any[] = [];

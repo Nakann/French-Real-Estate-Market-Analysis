@@ -3,11 +3,11 @@ dbt_project:
     dev:
       type: postgres
       threads: 4
-      host: localhost
-      port: 5432
-      user: "{{ env_var('POSTGRES_USER', 'postgres') }}"
-      pass: "{{ env_var('POSTGRES_PASSWORD', 'postgres') }}"
-      dbname: "{{ env_var('POSTGRES_DB', 'real_estate_db') }}"
+      host: "{{ env_var('DB_HOST', 'localhost') }}"
+      port: "{{ env_var('DB_PORT', '5432') | int }}"
+      user: "{{ env_var('DB_USER', 'postgres') }}"
+      pass: "{{ env_var('DB_PASSWORD', 'postgres') }}"
+      dbname: "{{ env_var('DB_NAME', 'real_estate_db') }}"
       schema: gold
       search_path: "gold, public"
   target: dev

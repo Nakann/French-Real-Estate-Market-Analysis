@@ -27,7 +27,7 @@ export async function GET(request: Request) {
           nb_mutations,
           niveau_vie_median,
           taux_pauvrete,
-          ST_AsGeoJSON(geometry)::json AS geometry
+          ST_AsGeoJSON(ST_SimplifyPreserveTopology(geometry, 0.001))::json AS geometry
         FROM gold.fact_communes
         WHERE ST_Intersects(geometry, ST_MakeEnvelope($1, $2, $3, $4, 4326))
           AND prix_m2_median IS NOT NULL
@@ -59,20 +59,49 @@ export async function GET(request: Request) {
     }
   }
 
-  // Option 2 : Aucun paramètre fourni -> Retourne la liste texte simple
+  // Option 2 : Aucun paramètre fourni -> Retourne la liste texte simple (avec support optionnel de recherche)
+  const queryParam = searchParams.get('query') || searchParams.get('search');
   try {
-    const result = await pool.query(`
-      SELECT DISTINCT code_commune, nom_commune 
-      FROM bronze.raw_dvf 
-      WHERE nom_commune IS NOT NULL 
-        AND nom_commune != ''
-        AND code_commune IS NOT NULL
-      ORDER BY nom_commune ASC;
-    `);
+    let result;
+    if (queryParam) {
+      const q = queryParam.trim();
+      result = await pool.query(`
+        SELECT 
+          code_commune, 
+          nom_commune,
+          ST_Y(ST_Centroid(geometry)) AS latitude,
+          ST_X(ST_Centroid(geometry)) AS longitude
+        FROM gold.fact_communes 
+        WHERE (nom_commune ILIKE $1 OR code_commune LIKE $2)
+          AND nom_commune IS NOT NULL 
+          AND nom_commune != ''
+          AND code_commune IS NOT NULL
+        ORDER BY
+          CASE WHEN nom_commune ILIKE $3 THEN 0 ELSE 1 END,
+          COALESCE(nb_mutations, 0) DESC
+        LIMIT 50;
+      `, [`%${q}%`, `${q}%`, `${q}%`]);
+    } else {
+      result = await pool.query(`
+        SELECT 
+          code_commune, 
+          nom_commune,
+          ST_Y(ST_Centroid(geometry)) AS latitude,
+          ST_X(ST_Centroid(geometry)) AS longitude
+        FROM gold.fact_communes 
+        WHERE nom_commune IS NOT NULL 
+          AND nom_commune != ''
+          AND code_commune IS NOT NULL
+        ORDER BY COALESCE(nb_mutations, 0) DESC
+        LIMIT 500;
+      `);
+    }
 
     const communes = result.rows.map((row: any) => ({
       code: row.code_commune,
       name: row.nom_commune.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase()),
+      latitude: row.latitude ? parseFloat(row.latitude) : null,
+      longitude: row.longitude ? parseFloat(row.longitude) : null,
     }));
 
     return NextResponse.json({ communes });
