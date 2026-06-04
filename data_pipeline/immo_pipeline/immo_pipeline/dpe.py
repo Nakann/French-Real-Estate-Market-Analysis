@@ -83,9 +83,9 @@ def raw_dpe(context: dagster.AssetExecutionContext) -> dagster.MaterializeResult
                 break
             except (requests.exceptions.RequestException, Exception) as e:
                 if attempt == MAX_RETRIES - 1:
-                    context.log.error(f"Echec définitif après {MAX_RETRIES} tentatives sur l'URL: {url}")
+                    print(f"Echec définitif après {MAX_RETRIES} tentatives sur l'URL: {url}", file=sys.stderr)
                     raise
-                context.log.warning(f"Erreur de connexion (IncompleteRead / ChunkedEncoding). Tentative {attempt + 1}/{MAX_RETRIES} dans quelques secondes... Erreur: {str(e)}")
+                print(f"Erreur de connexion (IncompleteRead / ChunkedEncoding). Tentative {attempt + 1}/{MAX_RETRIES} dans quelques secondes... Erreur: {str(e)}", file=sys.stderr)
                 time.sleep(2 ** attempt)
                 
         if not data:
