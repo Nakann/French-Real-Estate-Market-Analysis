@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie le reste du code de data_pipeline
 COPY . .
 
+# Crée le dossier requis pour Dagster
+RUN mkdir -p /app/.dagster
+
 # Définit le dossier home de Dagster
 ENV DAGSTER_HOME=/app/.dagster
 

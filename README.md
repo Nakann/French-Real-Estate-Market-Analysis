@@ -313,7 +313,12 @@ cd French-Real-Estate-Market-Analysis
 cp .env.example .env
 ```
 
-Ouvrez `.env` et adaptez `DAGSTER_HOME` à votre chemin local :
+Ouvrez le fichier `.env` nouvellement créé. **Vous devez impérativement adapter la variable `DAGSTER_HOME` avec le chemin absolu vers le dossier `.dagster` de votre projet sur votre machine.**
+
+> [!IMPORTANT]
+> N'oubliez pas de modifier cette variable `DAGSTER_HOME`. Si le chemin est incorrect ou s'il s'agit du chemin par défaut de l'exemple, Dagster refusera de démarrer.
+
+Ouvrez `.env` et adaptez la configuration :
 
 ```ini
 # Base de données PostgreSQL (laisser tel quel si vous utilisez Docker pour PostgreSQL)
