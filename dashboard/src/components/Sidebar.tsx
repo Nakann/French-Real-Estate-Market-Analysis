@@ -148,7 +148,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
         </div>
         <div>
           <h1 className="text-base font-bold text-slate-900 leading-tight">ImmoExplorer</h1>
-          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">BI Project · Immobilière</p>
+          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Marché Immobilier · Bretagne &amp; Pays de la Loire</p>
         </div>
       </div>
 
@@ -243,9 +243,14 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
             </div>
             <button
               onClick={() => onFiltersChange({ ...filters, showFloodZones: !filters.showFloodZones })}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${filters.showFloodZones ? 'bg-indigo-600' : 'bg-slate-200'}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
+                filters.showFloodZones ? 'bg-indigo-600' : 'bg-slate-200'
+              }`}
             >
-              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${filters.showFloodZones ? 'translate-x-4.5' : 'translate-x-1'}`} style={{ transform: filters.showFloodZones ? 'translateX(18px)' : 'translateX(4px)' }} />
+              <span
+                className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                style={{ transform: filters.showFloodZones ? 'translateX(22px)' : 'translateX(4px)' }}
+              />
             </button>
           </div>
         </section>
@@ -361,7 +366,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
       {/* ── Footer ── */}
       <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
         <p className="text-[10px] text-slate-400">© 2026 Nathan Avenel &amp; Adrien Pineau</p>
-        <span className="text-[10px] text-indigo-400 font-medium">BI Project</span>
+        <span className="text-[10px] text-indigo-400 font-medium">SAE 601</span>
       </div>
     </aside>
   );

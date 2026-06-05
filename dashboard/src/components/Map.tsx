@@ -117,17 +117,39 @@ function PropertyPopup({ re }: { re: RealEstate }) {
             )}
           </div>
           {re.etiquette_dpe && (
-            <div className="flex flex-col items-center">
-              <span
-                className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-md transition-transform hover:scale-105"
-                style={{ 
-                  background: color,
-                  boxShadow: `0 4px 10px ${color}33`
-                }}
-              >
-                {re.etiquette_dpe}
-              </span>
-              <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">DPE</span>
+            <div className="flex flex-col items-center gap-0.5">
+              {/* DPE Logo-style badge */}
+              <div className="flex flex-col items-end gap-0" style={{ fontSize: 0 }}>
+                {["A","B","C","D","E","F","G"].map(letter => {
+                  const isActive = letter === re.etiquette_dpe;
+                  const colors: Record<string,string> = { A:"#16a34a",B:"#22c55e",C:"#84cc16",D:"#eab308",E:"#f97316",F:"#ef4444",G:"#991b1b" };
+                  const widths: Record<string,number> = { A:18,B:21,C:24,D:27,E:30,F:33,G:36 };
+                  return (
+                    <div
+                      key={letter}
+                      style={{
+                        width: `${widths[letter]}px`,
+                        height: isActive ? '16px' : '8px',
+                        background: isActive ? colors[letter] : colors[letter] + '55',
+                        clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 0 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: isActive ? 900 : 400,
+                        fontSize: isActive ? '9px' : '7px',
+                        paddingLeft: '3px',
+                        lineHeight: 1,
+                        marginBottom: '1px',
+                        opacity: isActive ? 1 : 0.6,
+                      }}
+                    >
+                      {isActive ? letter : ''}
+                    </div>
+                  );
+                })}
+              </div>
+              <span className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">DPE</span>
             </div>
           )}
         </div>
@@ -135,33 +157,32 @@ function PropertyPopup({ re }: { re: RealEstate }) {
         {/* Date, Location Safety and Flood Zones */}
         <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2.5 border-t border-slate-200/50">
           {date && (
-            <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/40">
-              📅 {date}
+            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/60 flex items-center gap-1">
+              <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {date}
             </span>
           )}
           
           {re.distance_ban !== null ? (
             re.distance_ban <= 50 ? (
-              <span className="inline-flex items-center gap-0.5 text-[8px] uppercase tracking-wider font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/50" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
-                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                BAN valide
+              <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                Adresse vérifiée
               </span>
             ) : (
-              <span className="inline-flex items-center gap-0.5 text-[8px] uppercase tracking-wider font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
-                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                BAN +50m
+              <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-extrabold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200/60" title={`Écart de ${Math.round(re.distance_ban)}m par rapport à la BAN`}>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                Position approx.
               </span>
             )
           ) : (
-            <span className="text-[8px] uppercase tracking-wider font-extrabold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/40">
-              Non vérifié
-            </span>
+            <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200/40">Non localisé</span>
           )}
 
           {re.in_zone_inondable && (
-            <span className="inline-flex items-center gap-0.5 text-[8px] uppercase tracking-wider font-extrabold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/50" title="Ce bien est situé dans une zone inondable (PPRI)">
-              <svg className="w-2.5 h-2.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              Inondable (PPRI)
+            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-extrabold text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200/60" title="Ce bien est situé dans une zone inondable (PPRI)">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              Zone inondable
             </span>
           )}
         </div>

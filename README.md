@@ -247,17 +247,19 @@ Copy-Item .env.example .env
 ### Étape 2 — Construire et démarrer tous les services
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Cette commande va :
-1. **Construire** les images Docker du pipeline Python et du dashboard Next.js (peut prendre 5-10 min la première fois).
+1. **Construire** les images Docker (PostgreSQL+PostGIS, pipeline Python, dashboard Next.js) — peut prendre 5-15 min la première fois.
 2. **Démarrer** les 3 services en parallèle :
    - 🐘 **PostgreSQL + PostGIS** → port `5432` (base de données)
    - 📊 **Dagster (Orchestrateur)** → port `3001` (UI de gestion du pipeline)
    - 💻 **Dashboard Next.js** → port `3000` (interface utilisateur)
 
 > **Note :** Les services `data_pipeline` et `dashboard` attendent que `postgres` soit prêt avant de démarrer (`depends_on`).
+
+> **💡 Compatibilité Windows** : L'initialisation de PostgreSQL (`init.sql`) est intégrée directement dans l'image Docker via `database/Dockerfile`, ce qui évite les problèmes de montage de volumes avec des chemins contenant des espaces sur Windows.
 
 ### Étape 3 — Accéder aux interfaces
 
@@ -270,10 +272,10 @@ Cette commande va :
 
 ```bash
 # Arrêter sans supprimer les données
-docker-compose stop
+docker compose stop
 
 # Arrêter et supprimer les conteneurs (les données PostgreSQL sont conservées dans le volume pgdata)
-docker-compose down
+docker compose down
 
 # Tout supprimer, y compris les données PostgreSQL
 docker-compose down -v

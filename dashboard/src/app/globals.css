@@ -59,16 +59,16 @@
 }
 .leaflet-popup-tip-container { display: none; }
 
-/* ─── GeoJSON polygon hover ─── */
-.leaflet-interactive {
+/* ─── GeoJSON polygon hover — scoped to path elements only (not markers) ─── */
+.leaflet-interactive:not(.leaflet-marker-icon):not(.leaflet-marker-shadow) {
   outline: none !important;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
-.leaflet-interactive:focus {
+.leaflet-interactive:not(.leaflet-marker-icon):not(.leaflet-marker-shadow):focus {
   outline: none !important;
 }
-.leaflet-interactive:hover {
-  filter: brightness(1.08);
+.leaflet-pane.leaflet-overlay-pane path.leaflet-interactive:hover {
+  filter: brightness(1.1);
   cursor: pointer;
 }
 

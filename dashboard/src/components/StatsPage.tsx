@@ -19,7 +19,7 @@ interface StatsData {
   evolution: { periode: string; type_local: string; prix_median: number; nb: number }[];
   dpe: { dpe: string; nb: number; pct: number }[];
   histo: { tranche: string; ordre: number; type_local: string; nb: number }[];
-  socio: { niveau_vie_median: number | null; taux_pauvrete: number | null; indice_gini: number | null } | null;
+  socio: { niveau_vie_median: number | null; taux_pauvrete: number | null } | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export default function StatsPage() {
 
   // Evolution: pivot maison / appart
   const evolutionPivot = (() => {
-    if (!data) return [];
+    if (!data?.evolution?.length) return [];
     const map: Record<string, any> = {};
     data.evolution.forEach(row => {
       if (!map[row.periode]) map[row.periode] = { periode: row.periode };
@@ -187,7 +187,7 @@ export default function StatsPage() {
 
   // Histogramme: pivot maison / appart
   const histoPivot = (() => {
-    if (!data) return [];
+    if (!data?.histo?.length) return [];
     const map: Record<string, any> = {};
     data.histo.forEach(row => {
       if (!map[row.tranche]) map[row.tranche] = { tranche: row.tranche, ordre: row.ordre };
@@ -213,7 +213,7 @@ export default function StatsPage() {
             </div>
             <div>
               <h1 className="font-black text-slate-900 text-lg leading-tight">Statistiques</h1>
-              <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">ImmoExplorer · Marché immobilier</p>
+              <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Analyse du Marché Immobilier</p>
             </div>
           </div>
           <Link
@@ -518,15 +518,11 @@ export default function StatsPage() {
                   <p className="text-2xl font-black text-rose-700">{fmtDec(data?.socio?.taux_pauvrete, 1, " %")}</p>
                   <p className="text-[10px] text-rose-400 mt-0.5">seuil à 60% du revenu médian</p>
                 </div>
-                <div className="rounded-xl bg-amber-50 border border-amber-100 p-4">
-                  <p className="text-xs text-amber-600 font-bold uppercase tracking-wider mb-1">Indice de Gini</p>
-                  <p className="text-2xl font-black text-amber-700">
-                    {data?.socio?.indice_gini != null ? fmtDec(data.socio.indice_gini, 3) : 'N/D'}
-                  </p>
-                  <p className="text-[10px] text-amber-500 mt-0.5">
-                    {data?.socio?.indice_gini != null ? 'inégalité de revenus (0=parfaite égalité)' : 'Non disponible pour cette commune'}
-                  </p>
-                </div>
+                {!data?.socio?.niveau_vie_median && !data?.socio?.taux_pauvrete && (
+                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
+                    <p className="text-sm text-slate-400">Données socio-économiques non disponibles pour cette sélection</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
