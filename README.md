@@ -15,7 +15,7 @@ Il s'agit d'un pipeline de données **ELT complet** (Extract → Load → Transf
 - **56** — Morbihan
 - **35** — Ille-et-Vilaine
 
-Note: Nous avons choisi de prédéfinir 5 départements mais il est possible de changer la liste des départements à analyser en modifiant le fichier `data_pipeline/immo_pipeline/assets/raw/dvf.py` et la variable `DEPARTEMENTS_LIST`.
+> Note : Nous avons choisi de prédéfinir 5 départements mais il est possible de changer la liste des départements à analyser en modifiant le fichier `data_pipeline/immo_pipeline/assets/raw/dvf.py` et la variable `DEPARTEMENTS_LIST`.
 ---
 
 ## 📋 Table des matières

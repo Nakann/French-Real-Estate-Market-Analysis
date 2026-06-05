@@ -6,33 +6,33 @@ import Link from "next/link";
 // ── Icons inline SVG (no dependency) ──────────────────────────────────────────
 const IconMap = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-    <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+    <line x1="9" y1="3" x2="9" y2="18" /><line x1="15" y1="6" x2="15" y2="21" />
   </svg>
 );
 const IconFilter = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
   </svg>
 );
 const IconHome = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 const IconTrend = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
   </svg>
 );
 const IconGini = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+    <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
   </svg>
 );
 const IconSearch = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
@@ -148,7 +148,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
         </div>
         <div>
           <h1 className="text-base font-bold text-slate-900 leading-tight">ImmoExplorer</h1>
-          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Marché Immobilier · Bretagne &amp; Pays de la Loire</p>
+          <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Marché Immobilier</p>
         </div>
       </div>
 
@@ -243,9 +243,8 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
             </div>
             <button
               onClick={() => onFiltersChange({ ...filters, showFloodZones: !filters.showFloodZones })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                filters.showFloodZones ? 'bg-indigo-600' : 'bg-slate-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${filters.showFloodZones ? 'bg-indigo-600' : 'bg-slate-200'
+                }`}
             >
               <span
                 className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
@@ -339,7 +338,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
           className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-sm font-semibold shadow-md transition-all cursor-pointer"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
           </svg>
           Simulateur de prix
         </button>
@@ -357,7 +356,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
           className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white text-sm font-semibold shadow-md transition-all cursor-pointer"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 20V10M12 20V4M6 20v-6"/>
+            <path d="M18 20V10M12 20V4M6 20v-6" />
           </svg>
           Statistiques
         </Link>
@@ -366,7 +365,7 @@ export function Sidebar({ realEstates, filters, onFiltersChange, onCommuneSelect
       {/* ── Footer ── */}
       <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
         <p className="text-[10px] text-slate-400">© 2026 Nathan Avenel &amp; Adrien Pineau</p>
-        <span className="text-[10px] text-indigo-400 font-medium">SAE 601</span>
+        <span className="text-[10px] text-indigo-400 font-medium">BI Project</span>
       </div>
     </aside>
   );

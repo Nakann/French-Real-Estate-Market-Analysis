@@ -126,8 +126,7 @@ export async function GET(request: Request) {
       pool.query(`
         SELECT
           niveau_vie_median,
-          taux_pauvrete,
-          indice_gini
+          taux_pauvrete
         FROM gold.fact_communes
         WHERE code_commune = $1
         LIMIT 1
